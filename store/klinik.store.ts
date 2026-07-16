@@ -1,0 +1,105 @@
+import { create } from 'zustand';
+import { Poliklinik, LayananKlinik, PoliklinikPayload, LayananKlinikPayload } from '../types/klinik.types';
+import { klinikService } from '../services/klinik.service';
+
+interface KlinikState {
+  polikliniks: Poliklinik[];
+  layanans: Record<string, LayananKlinik[]>; // Key = poliklinikId
+  dokters: Record<string, {id: string, username: string, namaLengkap?: string}[]>; // Key = poliklinikId
+  isLoadingPoli: boolean;
+  isLoadingLayanan: boolean;
+  isLoadingDokter: boolean;
+  error: string | null;
+
+  fetchPoliklinik: () => Promise<void>;
+  createPoliklinik: (data: PoliklinikPayload) => Promise<void>;
+  
+  fetchLayananByPoli: (poliId: string) => Promise<void>;
+  createLayanan: (data: LayananKlinikPayload) => Promise<void>;
+
+  fetchDokterByPoli: (poliId: string) => Promise<void>;
+}
+
+export const useKlinikStore = create<KlinikState>((set, get) => ({
+  polikliniks: [],
+  layanans: {},
+  dokters: {},
+  isLoadingPoli: false,
+  isLoadingLayanan: false,
+  isLoadingDokter: false,
+  error: null,
+
+  fetchPoliklinik: async () => {
+    set({ isLoadingPoli: true, error: null });
+    try {
+      const data = await klinikService.getPoliklinik();
+      set({ polikliniks: data });
+    } catch (err: any) {
+      set({ error: err.message || 'Gagal mengambil data poliklinik' });
+    } finally {
+      set({ isLoadingPoli: false });
+    }
+  },
+
+  createPoliklinik: async (data) => {
+    set({ isLoadingPoli: true, error: null });
+    try {
+      await klinikService.createPoliklinik(data);
+      await get().fetchPoliklinik(); // refresh
+    } catch (err: any) {
+      set({ error: err.message || 'Gagal menyimpan poliklinik' });
+      throw err;
+    } finally {
+      set({ isLoadingPoli: false });
+    }
+  },
+
+  fetchLayananByPoli: async (poliId) => {
+    set({ isLoadingLayanan: true, error: null });
+    try {
+      const data = await klinikService.getLayananByPoli(poliId);
+      set((state) => ({
+        layanans: {
+          ...state.layanans,
+          [poliId]: data,
+        },
+      }));
+    } catch (err: any) {
+      set({ error: err.message || 'Gagal mengambil data layanan' });
+    } finally {
+      set({ isLoadingLayanan: false });
+    }
+  },
+
+  createLayanan: async (data) => {
+    set({ isLoadingLayanan: true, error: null });
+    try {
+      await klinikService.createLayanan(data);
+      await get().fetchLayananByPoli(data.poliklinikId); // refresh for that poli
+    } catch (error: any) {
+      set({ error: (error as any).message });
+    } finally {
+      set({ isLoadingLayanan: false });
+    }
+  },
+
+  fetchDokterByPoli: async (poliId) => {
+    // Return cache if exists
+    if (get().dokters[poliId]) return;
+
+    set({ isLoadingDokter: true, error: null });
+    try {
+      const dokters = await klinikService.getDokterByPoli(poliId);
+      set((state) => ({
+        dokters: {
+          ...state.dokters,
+          [poliId]: dokters,
+        },
+      }));
+    } catch (error) {
+      set({ error: (error as any).message });
+    } finally {
+      set({ isLoadingDokter: false });
+    }
+  }
+}));

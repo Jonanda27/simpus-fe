@@ -1,0 +1,230 @@
+import React, { useEffect } from 'react';
+import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from 'react-hook-form';
+import { ScreeningFormData } from '../schema';
+import { AlertTriangle, Clock, User, FileText, Activity, CheckCircle2 } from 'lucide-react';
+
+interface Step1Props {
+  register: UseFormRegister<ScreeningFormData>;
+  errors: FieldErrors<ScreeningFormData>;
+  watch: UseFormWatch<ScreeningFormData>;
+  setValue: UseFormSetValue<ScreeningFormData>;
+}
+
+export default function Step1Umum({ register, errors, watch, setValue }: Step1Props) {
+  const toTitleCase = (str: string) => {
+    if (!str) return str;
+    return str.replace(
+      /\w\S*/g,
+      (text) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+    );
+  };
+
+  const handleTitleCaseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, fieldName: keyof ScreeningFormData) => {
+    e.target.value = toTitleCase(e.target.value);
+    register(fieldName).onChange(e);
+  };
+
+  // Watch values for dynamic alerts
+  const sistolik = watch('tekananDarahSistolik');
+  const diastolik = watch('tekananDarahDiastolik');
+  const suhu = watch('suhuTubuh');
+  
+  // Watch for IMT calculation
+  const tb = watch('tinggiBadan');
+  const bb = watch('beratBadan');
+
+  // Watch for Nyeri
+  const skalaNyeri = watch('skalaNyeri') || 0;
+
+  const isTensiTinggi = Boolean(
+    (sistolik && !isNaN(sistolik) && sistolik >= 140) || 
+    (diastolik && !isNaN(diastolik) && diastolik >= 90)
+  );
+  const isSuhuTinggi = Boolean(suhu && !isNaN(suhu) && suhu >= 38);
+
+  useEffect(() => {
+    if (tb && bb && tb > 0 && !isNaN(tb) && !isNaN(bb)) {
+      const tbMeter = tb / 100;
+      const calcImt = bb / (tbMeter * tbMeter);
+      setValue('imt', parseFloat(calcImt.toFixed(1)));
+    } else {
+      setValue('imt', undefined as any);
+    }
+  }, [tb, bb, setValue]);
+
+  const imt = watch('imt');
+  let imtStatus = '';
+  if (imt) {
+    if (imt < 18.5) imtStatus = 'Kurus';
+    else if (imt < 25) imtStatus = 'Normal';
+    else if (imt < 27) imtStatus = 'Gemuk';
+    else imtStatus = 'Obesitas';
+  }
+
+  // Gunakan data statis untuk mockup agar tidak terjadi Hydration Error (SSR vs Client mismatch)
+  const dateStr = "12 Juli 2026";
+  const timeStr = "08:30";
+
+  return (
+    <div className="space-y-8">
+      
+      {/* PEMERIKSAAN FISIK (ANTROPOMETRI) */}
+      <div className="bg-white p-6 border border-gray-200">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+          <User className="w-5 h-5 mr-2 text-blue-600" />
+          Pemeriksaan Fisik
+        </h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Tinggi Badan (cm)</label>
+            <input type="number" {...register('tinggiBadan', { valueAsNumber: true })} className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-none placeholder-gray-400 text-gray-900" placeholder="160" />
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Berat Badan (kg)</label>
+            <input type="number" step="0.1" {...register('beratBadan', { valueAsNumber: true })} className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-none placeholder-gray-400 text-gray-900" placeholder="60" />
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Lingkar Perut (cm)</label>
+            <input type="number" {...register('lingkarPerut', { valueAsNumber: true })} className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-none placeholder-gray-400 text-gray-900" placeholder="80" />
+          </div>
+          <div className="col-span-2 md:col-span-1 bg-gray-50 p-2 border border-gray-200 text-center flex flex-col justify-center">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">IMT (Otomatis)</label>
+            <div className="mt-1 font-bold text-lg text-blue-700">{imt || '-'}</div>
+            <div className="text-xs text-gray-500">{imtStatus}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* TANDA VITAL LENGKAP */}
+      <div className="bg-white p-6 border border-gray-200">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+          <Activity className="w-5 h-5 mr-2 text-blue-600" />
+          Tanda Vital
+        </h3>
+        
+        {/* Alerts for Abnormalities */}
+        {(isTensiTinggi || isSuhuTinggi) && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 flex items-start">
+            <AlertTriangle className="w-5 h-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-red-800">Peringatan Klinis:</h4>
+              <ul className="text-sm text-red-700 mt-1 list-disc list-inside">
+                {isTensiTinggi && <li>Tekanan Darah Tinggi (≥ 140/90)</li>}
+                {isSuhuTinggi && <li>Demam Tinggi (≥ 38°C)</li>}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Tensi Sistolik</label>
+            <input type="number" {...register('tekananDarahSistolik', { valueAsNumber: true })} className={`mt-1 w-full px-4 py-2 border ${isTensiTinggi ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-none placeholder-gray-400 text-gray-900`} placeholder="120" />
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Tensi Diastolik</label>
+            <input type="number" {...register('tekananDarahDiastolik', { valueAsNumber: true })} className={`mt-1 w-full px-4 py-2 border ${isTensiTinggi ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-none placeholder-gray-400 text-gray-900`} placeholder="80" />
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Nadi (x/mnt)</label>
+            <input type="number" {...register('nadi', { valueAsNumber: true })} className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-none placeholder-gray-400 text-gray-900" placeholder="80" />
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Napas (x/mnt)</label>
+            <input type="number" {...register('pernapasan', { valueAsNumber: true })} className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-none placeholder-gray-400 text-gray-900" placeholder="20" />
+          </div>
+          
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">Suhu (°C)</label>
+            <input type="number" step="0.1" {...register('suhuTubuh', { valueAsNumber: true })} className={`mt-1 w-full px-4 py-2 border ${isSuhuTinggi ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-none placeholder-gray-400 text-gray-900`} placeholder="36.5" />
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-semibold text-gray-500 uppercase">SpO2 (%)</label>
+            <input type="number" {...register('saturasiOksigen', { valueAsNumber: true })} className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-none placeholder-gray-400 text-gray-900" placeholder="98" />
+          </div>
+          <div className="col-span-2 md:col-span-2 bg-gray-50 p-4 border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-gray-500 uppercase">Skala Nyeri (0-10)</label>
+              <span className={`px-2 py-0.5 text-xs font-bold text-white shadow-sm ${
+                skalaNyeri === 0 ? 'bg-blue-500' : 
+                skalaNyeri <= 3 ? 'bg-green-500' : 
+                skalaNyeri <= 6 ? 'bg-yellow-500' : 
+                skalaNyeri <= 8 ? 'bg-orange-500' : 'bg-red-600'
+              }`}>
+                {skalaNyeri} - {skalaNyeri === 0 ? 'Tidak Nyeri' : skalaNyeri <= 3 ? 'Ringan' : skalaNyeri <= 6 ? 'Sedang' : skalaNyeri <= 8 ? 'Berat' : 'Sangat Hebat'}
+              </span>
+            </div>
+            <input 
+              type="range" 
+              min="0" max="10" 
+              defaultValue={0} 
+              {...register('skalaNyeri', { valueAsNumber: true })} 
+              className={`mt-2 w-full h-2 rounded-lg appearance-none cursor-pointer ${
+                skalaNyeri === 0 ? 'accent-blue-500 bg-blue-200' : 
+                skalaNyeri <= 3 ? 'accent-green-500 bg-green-200' : 
+                skalaNyeri <= 6 ? 'accent-yellow-500 bg-yellow-200' : 
+                skalaNyeri <= 8 ? 'accent-orange-500 bg-orange-200' : 'accent-red-600 bg-red-200'
+              }`} 
+            />
+            <div className="flex justify-between text-xs font-medium mt-2">
+              <span className={skalaNyeri === 0 ? 'text-blue-600 font-bold' : 'text-gray-400'}>0</span>
+              <span className={skalaNyeri > 0 && skalaNyeri <= 3 ? 'text-green-600 font-bold' : 'text-gray-400'}>3</span>
+              <span className={skalaNyeri > 3 && skalaNyeri <= 6 ? 'text-yellow-600 font-bold' : 'text-gray-400'}>6</span>
+              <span className={skalaNyeri > 6 && skalaNyeri <= 8 ? 'text-orange-600 font-bold' : 'text-gray-400'}>8</span>
+              <span className={skalaNyeri > 8 ? 'text-red-600 font-bold' : 'text-gray-400'}>10</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* KELUHAN UTAMA LENGKAP */}
+      <div className="bg-white p-6 border border-gray-200">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+          <FileText className="w-5 h-5 mr-2 text-blue-600" />
+          Anamnesis (Keluhan)
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Keluhan Utama <span className="text-red-500">*</span></label>
+            <textarea 
+              {...register('keluhanUtama')}
+              onChange={(e) => handleTitleCaseChange(e, 'keluhanUtama')}
+              rows={2}
+              className={`w-full px-4 py-2.5 rounded-none border ${errors.keluhanUtama ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-gray-900`}
+              placeholder="Keluhan utama pasien saat ini..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Lama Keluhan</label>
+            <input type="text" {...register('lamaKeluhan')} onChange={(e) => handleTitleCaseChange(e, 'lamaKeluhan')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Misal: 3 hari" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Penyakit Sekarang</label>
+            <input type="text" {...register('riwayatPenyakitSekarang')} onChange={(e) => handleTitleCaseChange(e, 'riwayatPenyakitSekarang')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Detail penyakit sekarang..." />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Penyakit Dahulu</label>
+            <input type="text" {...register('riwayatPenyakitDahulu')} onChange={(e) => handleTitleCaseChange(e, 'riwayatPenyakitDahulu')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Penyakit yang pernah dialami..." />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Alergi</label>
+            <input type="text" {...register('riwayatAlergi')} onChange={(e) => handleTitleCaseChange(e, 'riwayatAlergi')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900 text-red-600 font-medium" placeholder="Kosongkan jika tidak ada" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Operasi</label>
+            <input type="text" {...register('riwayatOperasi')} onChange={(e) => handleTitleCaseChange(e, 'riwayatOperasi')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Kapan & Jenis operasi..." />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Rawat Inap</label>
+            <input type="text" {...register('riwayatRawatInap')} onChange={(e) => handleTitleCaseChange(e, 'riwayatRawatInap')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Pernah dirawat karena..." />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Transfusi Darah</label>
+            <input type="text" {...register('riwayatTransfusi')} onChange={(e) => handleTitleCaseChange(e, 'riwayatTransfusi')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Pernah transfusi (Ya/Tidak, Kapan)..." />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
