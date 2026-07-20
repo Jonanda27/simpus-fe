@@ -21,7 +21,8 @@ import {
   History,
   TestTubes,
   Wallet,
-  HeartPulse
+  HeartPulse,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -158,6 +159,16 @@ export default function DashboardLayout({
               <Link href="/admin/master-obat" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/master-obat' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                 <Pill className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/admin/master-obat' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Master Obat</span>
+              </Link>
+
+              <Link href="/admin/master-alergi" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/master-alergi' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <AlertCircle className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/admin/master-alergi' ? 'text-red-600' : 'text-gray-400 md:group-hover:text-red-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Master Alergi</span>
+              </Link>
+
+              <Link href="/admin/satusehat-monitoring" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/satusehat-monitoring' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <Activity className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/admin/satusehat-monitoring' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Monitoring SATUSEHAT</span>
               </Link>
             </>
           )}

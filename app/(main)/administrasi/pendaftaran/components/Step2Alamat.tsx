@@ -28,6 +28,13 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
   const selectedKabName = watch('kabupatenKota');
   const selectedKecName = watch('kecamatan');
 
+  const toTitleCase = (str: string) => {
+    return str.replace(
+      /\w\S*/g,
+      (text) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+    );
+  };
+
   // API Wilayah (EMSIFA)
   const API_BASE = 'https://www.emsifa.com/api-wilayah-indonesia/api';
 
@@ -47,7 +54,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
           .then(data => {
             setRegencies(data);
             // Reset lower levels
-            if (selectedKabName && !data.find((d: any) => d.name === selectedKabName)) {
+            if (selectedKabName && !data.find((d: any) => d.name.toUpperCase() === selectedKabName.toUpperCase())) {
               setValue('kabupatenKota', '');
               setValue('kecamatan', '');
               setValue('desaKelurahan', '');
@@ -69,7 +76,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
           .then(data => {
             setDistricts(data);
             // Reset lower levels
-            if (selectedKecName && !data.find((d: any) => d.name === selectedKecName)) {
+            if (selectedKecName && !data.find((d: any) => d.name.toUpperCase() === selectedKecName.toUpperCase())) {
               setValue('kecamatan', '');
               setValue('desaKelurahan', '');
             }
@@ -90,7 +97,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
           .then(data => {
             setVillages(data);
             const selectedDesaName = watch('desaKelurahan');
-            if (selectedDesaName && !data.find((d: any) => d.name === selectedDesaName)) {
+            if (selectedDesaName && !data.find((d: any) => d.name.toUpperCase() === selectedDesaName.toUpperCase())) {
               setValue('desaKelurahan', '');
             }
           })
@@ -139,10 +146,11 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             <select
               className="w-full px-4 py-2 border border-slate-300 rounded-none bg-white focus:ring-2 focus:ring-blue-500"
               {...register('provinsi')}
+              value={selectedProvName || ""}
             >
               <option value="">Pilih Provinsi</option>
               {provinces.map(p => (
-                <option key={p.id} value={p.name}>{p.name}</option>
+                <option key={p.id} value={p.name}>{toTitleCase(p.name)}</option>
               ))}
             </select>
             {errors.provinsi && <p className="text-red-500 text-xs mt-1">{errors.provinsi.message}</p>}
@@ -153,11 +161,12 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             <select
               className="w-full px-4 py-2 border border-slate-300 rounded-none bg-white focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               {...register('kabupatenKota')}
+              value={selectedKabName || ""}
               disabled={!selectedProvName}
             >
               <option value="">Pilih Kabupaten/Kota</option>
               {regencies.map(r => (
-                <option key={r.id} value={r.name}>{r.name}</option>
+                <option key={r.id} value={r.name}>{toTitleCase(r.name)}</option>
               ))}
             </select>
             {errors.kabupatenKota && <p className="text-red-500 text-xs mt-1">{errors.kabupatenKota.message}</p>}
@@ -168,11 +177,12 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             <select
               className="w-full px-4 py-2 border border-slate-300 rounded-none bg-white focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               {...register('kecamatan')}
+              value={selectedKecName || ""}
               disabled={!selectedKabName}
             >
               <option value="">Pilih Kecamatan</option>
               {districts.map(d => (
-                <option key={d.id} value={d.name}>{d.name}</option>
+                <option key={d.id} value={d.name}>{toTitleCase(d.name)}</option>
               ))}
             </select>
             {errors.kecamatan && <p className="text-red-500 text-xs mt-1">{errors.kecamatan.message}</p>}
@@ -183,11 +193,12 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             <select
               className="w-full px-4 py-2 border border-slate-300 rounded-none bg-white focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               {...register('desaKelurahan')}
+              value={watch('desaKelurahan') || ""}
               disabled={!selectedKecName}
             >
               <option value="">Pilih Desa/Kelurahan</option>
               {villages.map(v => (
-                <option key={v.id} value={v.name}>{v.name}</option>
+                <option key={v.id} value={v.name}>{toTitleCase(v.name)}</option>
               ))}
             </select>
             {errors.desaKelurahan && <p className="text-red-500 text-xs mt-1">{errors.desaKelurahan.message}</p>}

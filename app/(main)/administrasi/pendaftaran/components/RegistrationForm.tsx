@@ -51,6 +51,7 @@ export default function RegistrationForm() {
     trigger,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -182,8 +183,9 @@ export default function RegistrationForm() {
 
       {/* Form Area */}
       <form onSubmit={(e) => { e.preventDefault(); }}>
-        <div className="min-h-[400px]">
-          {currentStep === 1 && <Step1Identitas register={register} errors={errors} watch={watch} setValue={setValue} />}
+        {/* Form Steps */}
+        <div className="mt-8">
+          {currentStep === 1 && <Step1Identitas register={register} errors={errors} watch={watch} setValue={setValue} reset={reset} />}
           {currentStep === 2 && <Step2Alamat register={register} errors={errors} watch={watch} setValue={setValue} />}
           {currentStep === 3 && <Step3Kontak register={register} errors={errors} watch={watch} />}
           {currentStep === 4 && <Step4Administrasi register={register} errors={errors} watch={watch} setValue={setValue} />}

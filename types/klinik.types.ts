@@ -4,6 +4,7 @@ export interface Poliklinik {
   namaPoli: string;
   deskripsi?: string | null;
   statusAktif: boolean;
+  ihsLocationId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -25,4 +25,15 @@ export const masterService = {
     const res = await api.delete(`/master/obat/${id}`);
     return res.data;
   },
+
+  getAlergi: async () => {
+    const res = await api.get('/master-alergi');
+    return res.data;
+  },
+
+  getIcd10: async (search?: string) => {
+    const params = search ? { q: search } : {};
+    const res = await api.get('/icd10/search', { params });
+    return res.data;
+  }
 };

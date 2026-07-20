@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Users, FileText, CheckCircle, Trash2, Edit } from 'lucide-react';
+import { Plus, Search, Users, FileText, CheckCircle, Trash2, Edit, RefreshCw } from 'lucide-react';
 import { usePasienStore } from '@/store/pasien.store';
 import Link from 'next/link';
 
 export default function MasterPasienAdminPage() {
-  const { pasiens, isLoading, fetchPasiens, deletePasien } = usePasienStore();
+  const { pasiens, isLoading, fetchPasiens, deletePasien, syncPasienIHS } = usePasienStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [syncingId, setSyncingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchPasiens();
@@ -21,6 +22,23 @@ export default function MasterPasienAdminPage() {
       } catch (error) {
         alert('Gagal menghapus data pasien (mungkin ada data kunjungan yang terikat)');
       }
+    }
+  };
+
+  const handleSyncIHS = async (id: number, nik: string | null) => {
+    if (!nik) {
+      alert('NIK pasien kosong, tidak bisa sinkronisasi dengan SATUSEHAT');
+      return;
+    }
+    
+    setSyncingId(id);
+    try {
+      await syncPasienIHS(nik);
+      alert('Berhasil sinkronisasi IHS Number dengan SATUSEHAT');
+    } catch (error: any) {
+      alert(error.message || 'Gagal sinkronisasi dengan SATUSEHAT');
+    } finally {
+      setSyncingId(null);
     }
   };
 
@@ -103,7 +121,14 @@ export default function MasterPasienAdminPage() {
                     <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 text-slate-800">
                       <td className="py-4 px-6">
                         <div className="font-bold text-blue-700">{p.noRM}</div>
-                        <div className="text-xs text-gray-500">{p.nik || 'NIK Kosong'}</div>
+                        <div className="text-xs text-gray-500">NIK: {p.nik || 'Kosong'}</div>
+                        {p.noIHS ? (
+                          <div className="text-xs text-emerald-600 font-medium flex items-center mt-1">
+                            <CheckCircle className="w-3 h-3 mr-1" /> IHS: {p.noIHS}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-amber-600 mt-1 italic">Belum Sync IHS</div>
+                        )}
                       </td>
                       <td className="py-4 px-6">
                         <div className="font-semibold text-gray-900">{p.namaLengkap}</div>
@@ -122,6 +147,17 @@ export default function MasterPasienAdminPage() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right space-x-2">
+                        {!p.noIHS && p.nik && (
+                          <button 
+                            onClick={() => handleSyncIHS(p.id, p.nik)}
+                            disabled={syncingId === p.id}
+                            className={`px-3 py-1.5 ${syncingId === p.id ? 'bg-gray-100 text-gray-400' : 'bg-teal-50 text-teal-600 hover:bg-teal-100'} font-medium text-xs rounded-none transition-colors inline-flex items-center`}
+                            title="Sync SATUSEHAT"
+                          >
+                            <RefreshCw className={`w-3 h-3 mr-1 ${syncingId === p.id ? 'animate-spin' : ''}`} />
+                            Sync IHS
+                          </button>
+                        )}
                         <button className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium text-xs rounded-none transition-colors" title="Edit Data">
                           Edit
                         </button>

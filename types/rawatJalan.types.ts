@@ -77,13 +77,24 @@ export interface SOAPPayload {
   riwayatPenyakitSekarang?: string;
   riwayatPenyakitDahulu?: string;
   riwayatAlergi?: string;
+  alergiArr?: AlergiItem[];
   keadaanUmum?: string;
   kesadaran?: string;
   pemeriksaanFisik?: string;
   hasilPenunjang?: string;
   diagnosisKlinis?: string;
+  diagnosisArr?: DiagnosaItem[];
   rencanaTerapi?: string;
   instruksiMedis?: string;
+}
+
+/** Alergi yang dipilih dokter */
+export interface AlergiItem {
+  alergiId: string;
+  nama_alergi: string;
+  manifestasiKode: string;
+  manifestasiNama: string;
+  tingkatKeparahan: string;
 }
 
 /** Diagnosa ICD-10 yang dipilih dokter */

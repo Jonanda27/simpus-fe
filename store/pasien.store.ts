@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Pasien } from '../types/pasien.types';
 import { pasienService } from '../services/pasien.service';
+import { satusehatService } from '../services/satusehat.service';
 
 interface PasienState {
   pasiens: Pasien[];
@@ -9,6 +10,7 @@ interface PasienState {
   fetchPasiens: () => Promise<void>;
   deletePasien: (id: number) => Promise<void>;
   clearError: () => void;
+  syncPasienIHS: (nik: string) => Promise<any>;
 }
 
 export const usePasienStore = create<PasienState>((set, get) => ({
@@ -55,5 +57,25 @@ export const usePasienStore = create<PasienState>((set, get) => ({
     }
   },
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+
+  syncPasienIHS: async (nik: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Import dynamically or at top level. I will use the imported service.
+      const response = await satusehatService.syncPatientIHS(nik);
+      if (response.success) {
+        // Refresh the list to get updated IHS number
+        await get().fetchPasiens();
+        return response;
+      }
+      return response;
+    } catch (error: any) {
+      set({ 
+        error: error.message || 'Gagal sinkronisasi IHS', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  }
 }));

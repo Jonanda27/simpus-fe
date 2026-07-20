@@ -24,6 +24,7 @@ export const screeningSchema = z.object({
   riwayatPenyakitSekarang: z.string().optional(),
   riwayatPenyakitDahulu: z.string().optional(),
   riwayatAlergi: z.string().optional(),
+  alergiArr: z.array(z.any()).optional(),
   riwayatOperasi: z.string().optional(),
   riwayatRawatInap: z.string().optional(),
   riwayatTransfusi: z.string().optional(),
