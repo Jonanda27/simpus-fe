@@ -5,6 +5,8 @@ import { Select } from '@/components/ui/Select';
 import { RegistrationFormData } from '../schema';
 import { usePerusahaanStore } from '@/store/perusahaan.store';
 
+import { referensiService, RefItem } from '@/services/referensi.service';
+
 interface Step3Props {
   register: UseFormRegister<RegistrationFormData>;
   errors: FieldErrors<RegistrationFormData>;
@@ -15,6 +17,15 @@ export default function Step3Kontak({ register, errors, watch }: Step3Props) {
   const jenisPenjamin = watch('jenisPenjamin');
   
   const { perusahaan, isLoading, fetchPerusahaan } = usePerusahaanStore();
+  const [penjaminList, setPenjaminList] = React.useState<RefItem[]>([]);
+
+  React.useEffect(() => {
+    referensiService.getByType('jenis-penjamin')
+      .then((data) => {
+        if (data && data.length > 0) setPenjaminList(data);
+      })
+      .catch((err) => console.error('Failed to load jenis-penjamin referensi', err));
+  }, []);
 
   React.useEffect(() => {
     if (jenisPenjamin === 'Perusahaan' && perusahaan.length === 0) {
@@ -23,6 +34,18 @@ export default function Step3Kontak({ register, errors, watch }: Step3Props) {
   }, [jenisPenjamin, fetchPerusahaan, perusahaan.length]);
 
   const perusahaanOptions = perusahaan.map(p => ({ label: p.namaPerusahaan, value: p.namaPerusahaan }));
+
+  const defaultPenjaminOptions = [
+    { label: 'Umum / Mandiri', value: 'Umum' },
+    { label: 'BPJS Kesehatan', value: 'BPJS' },
+    { label: 'Asuransi Swasta', value: 'Asuransi' },
+    { label: 'Perusahaan', value: 'Perusahaan' },
+    { label: 'KIS', value: 'KIS' },
+  ];
+
+  const penjaminOptions = penjaminList.length > 0
+    ? penjaminList.map(p => ({ label: p.label, value: p.label.toLowerCase().includes('bpjs') ? 'BPJS' : p.label.toLowerCase().includes('umum') ? 'Umum' : p.label.toLowerCase().includes('asuransi') ? 'Asuransi' : p.label }))
+    : defaultPenjaminOptions;
 
   const formatPascalCase = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.target.value = e.target.value.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
@@ -89,13 +112,7 @@ export default function Step3Kontak({ register, errors, watch }: Step3Props) {
             label="Jenis Pembayaran *"
             {...register('jenisPenjamin')}
             error={errors.jenisPenjamin?.message}
-            options={[
-              { label: 'Umum / Mandiri', value: 'Umum' },
-              { label: 'BPJS Kesehatan', value: 'BPJS' },
-              { label: 'Asuransi Swasta', value: 'Asuransi' },
-              { label: 'Perusahaan', value: 'Perusahaan' },
-              { label: 'KIS', value: 'KIS' },
-            ]}
+            options={penjaminOptions}
           />
 
           {jenisPenjamin === 'BPJS' && (

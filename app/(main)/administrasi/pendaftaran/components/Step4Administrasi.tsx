@@ -5,6 +5,8 @@ import { Select } from '@/components/ui/Select';
 import { RegistrationFormData } from '../schema';
 import { useKlinikStore } from '@/store/klinik.store';
 
+import { referensiService, RefItem } from '@/services/referensi.service';
+
 interface Step4Props {
   register: UseFormRegister<RegistrationFormData>;
   errors: FieldErrors<RegistrationFormData>;
@@ -17,6 +19,47 @@ export default function Step4Administrasi({ register, errors, watch, setValue }:
   const poliTujuan = watch('poliTujuan');
   const jenisPelayanan = watch('jenisPelayanan');
   const { polikliniks, layanans, dokters, fetchPoliklinik, fetchLayananByPoli, fetchDokterByPoli, isLoadingDokter } = useKlinikStore();
+
+  const [caraDatangList, setCaraDatangList] = React.useState<RefItem[]>([]);
+  const [jenisPelayananList, setJenisPelayananList] = React.useState<RefItem[]>([]);
+  const [prioritasList, setPrioritasList] = React.useState<RefItem[]>([]);
+
+  useEffect(() => {
+    referensiService.getByType('cara-datang').then(data => data && data.length > 0 && setCaraDatangList(data)).catch(() => {});
+    referensiService.getByType('jenis-pelayanan').then(data => data && data.length > 0 && setJenisPelayananList(data)).catch(() => {});
+    referensiService.getByType('prioritas').then(data => data && data.length > 0 && setPrioritasList(data)).catch(() => {});
+  }, []);
+
+  const defaultCaraDatang = [
+    { label: 'Datang sendiri', value: 'Datang sendiri' },
+    { label: 'Ambulans', value: 'Ambulans' },
+    { label: 'Rujukan', value: 'Rujukan' },
+  ];
+  const caraDatangOptions = caraDatangList.length > 0
+    ? caraDatangList.map(c => ({ label: c.label, value: c.label }))
+    : defaultCaraDatang;
+
+  const defaultJenisPelayanan = [
+    { label: 'Rawat Jalan', value: 'Rawat Jalan' },
+    { label: 'Rawat Inap', value: 'Rawat Inap' },
+    { label: 'UGD', value: 'UGD' },
+  ];
+  const jenisPelayananOptions = [
+    { label: '-- Pilih Jenis --', value: '' },
+    ...(jenisPelayananList.length > 0
+      ? jenisPelayananList.map(j => ({ label: j.label, value: j.label.includes('IGD') ? 'UGD' : j.label }))
+      : defaultJenisPelayanan)
+  ];
+
+  const defaultPrioritas = [
+    { label: 'Umum', value: 'Umum' },
+    { label: 'Lansia', value: 'Lansia' },
+    { label: 'Disabilitas', value: 'Disabilitas' },
+    { label: 'Ibu Hamil', value: 'Ibu Hamil' },
+  ];
+  const prioritasOptions = prioritasList.length > 0
+    ? prioritasList.map(p => ({ label: p.label, value: p.label.split(' ')[0] }))
+    : defaultPrioritas;
 
   const formatPascalCase = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.target.value = e.target.value.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
@@ -89,23 +132,14 @@ export default function Step4Administrasi({ register, errors, watch, setValue }:
           label="Cara Datang *"
           {...register('caraDatang')}
           error={errors.caraDatang?.message}
-          options={[
-            { label: 'Datang sendiri', value: 'Datang sendiri' },
-            { label: 'Ambulans', value: 'Ambulans' },
-            { label: 'Rujukan', value: 'Rujukan' },
-          ]}
+          options={caraDatangOptions}
         />
 
         <Select
           label="Jenis Pelayanan *"
           {...register('jenisPelayanan')}
           error={errors.jenisPelayanan?.message}
-          options={[
-            { label: '-- Pilih Jenis --', value: '' },
-            { label: 'Rawat Jalan', value: 'Rawat Jalan' },
-            { label: 'Rawat Inap', value: 'Rawat Inap' },
-            { label: 'UGD', value: 'UGD' },
-          ]}
+          options={jenisPelayananOptions}
         />
         
         {jenisPelayanan && (
@@ -138,12 +172,7 @@ export default function Step4Administrasi({ register, errors, watch, setValue }:
           label="Prioritas Pasien *"
           {...register('prioritas')}
           error={errors.prioritas?.message}
-          options={[
-            { label: 'Umum', value: 'Umum' },
-            { label: 'Lansia', value: 'Lansia' },
-            { label: 'Disabilitas', value: 'Disabilitas' },
-            { label: 'Ibu Hamil', value: 'Ibu Hamil' },
-          ]}
+          options={prioritasOptions}
         />
       </div>
 

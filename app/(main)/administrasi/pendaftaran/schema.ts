@@ -47,7 +47,7 @@ export const registrationSchema = z.object({
   kontakDarurat: z.string().min(3, 'Nama kontak darurat wajib diisi'),
   hubunganKontakDarurat: z.string().min(2, 'Hubungan kontak darurat wajib diisi'),
   noHpDarurat: z.string().min(10, 'Nomor HP minimal 10 digit').regex(/^\d+$/, 'Nomor HP hanya boleh berisi angka'),
-  jenisPenjamin: z.enum(['Umum', 'BPJS', 'Asuransi', 'Perusahaan', 'KIS'], { message: 'Pilih jenis penjamin' }),
+  jenisPenjamin: z.string().min(1, 'Pilih jenis penjamin'),
   
   // Data BPJS (Kondisional)
   noBpjs: z.string().optional().or(z.literal('')),
@@ -65,13 +65,13 @@ export const registrationSchema = z.object({
   poliTujuan: z.string().min(1, 'Poli tujuan wajib dipilih'),
   layananTujuan: z.string().optional().or(z.literal('')),
   dokterTujuan: z.string().optional().or(z.literal('')),
-  jenisPelayanan: z.enum(['Rawat Jalan', 'Rawat Inap', 'UGD'], { message: 'Pilih jenis pelayanan' }),
+  jenisPelayanan: z.string().min(1, 'Pilih jenis pelayanan'),
   statusPasien: z.enum(['Baru', 'Lama'], { message: 'Pilih status pasien' }),
   noAntrian: z.string().optional().or(z.literal('')),
   tanggalRegistrasi: z.string().min(1, 'Tanggal registrasi wajib diisi'),
   jamRegistrasi: z.string().min(1, 'Jam registrasi wajib diisi'),
-  caraDatang: z.enum(['Datang sendiri', 'Ambulans', 'Rujukan'], { message: 'Pilih cara datang' }),
-  prioritas: z.enum(['Umum', 'Lansia', 'Disabilitas', 'Ibu Hamil'], { message: 'Pilih prioritas pasien' }),
+  caraDatang: z.string().min(1, 'Pilih cara datang'),
+  prioritas: z.string().min(1, 'Pilih prioritas pasien'),
   
   // Data Rujukan (Kondisional)
   asalRujukan: z.string().optional().or(z.literal('')),
