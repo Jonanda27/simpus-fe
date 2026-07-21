@@ -21,7 +21,8 @@ import {
   History,
   TestTubes,
   Wallet,
-  HeartPulse
+  HeartPulse,
+  Coins
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -158,6 +159,16 @@ export default function DashboardLayout({
               <Link href="/admin/master-obat" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/master-obat' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                 <Pill className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/admin/master-obat' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Master Obat</span>
+              </Link>
+
+              <Link href="/admin/logistik" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname.startsWith('/admin/logistik') ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <Package className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname.startsWith('/admin/logistik') ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Logistik & Aset</span>
+              </Link>
+
+              <Link href="/admin/keuangan" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname.startsWith('/admin/keuangan') ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <Coins className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname.startsWith('/admin/keuangan') ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Keuangan & Tarif</span>
               </Link>
             </>
           )}
