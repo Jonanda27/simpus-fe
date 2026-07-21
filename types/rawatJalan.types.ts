@@ -104,6 +104,8 @@ export interface DiagnosaItem {
   nama_diagnosis: string;
   jenisDiagnosis: string; // Utama, Sekunder, Komorbid, Komplikasi
   diagnosisKlinis?: string;
+  statusKlinis?: string;
+  statusVerifikasi?: string;
 }
 
 /** Diagnosa dari DB (include ICD-10 detail) */

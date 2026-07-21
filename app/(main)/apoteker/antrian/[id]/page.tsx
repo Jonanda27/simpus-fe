@@ -75,6 +75,13 @@ export default function ProsesResepPage() {
 
   // Hitung apakah ada obat yang stoknya kurang
   const hasInsufficientStock = resep.details.some(d => d.obat.stok < d.jumlah);
+  
+  // Cek apakah sudah dibayar di kasir
+  // Jika UKM, gratis.
+  // Jika BPJS (jenisPenjamin), biasanya langsung cover, tapi kita asumsikan lewat kasir dulu.
+  // Jika tagihan belum ada, berarti kasir belum klik 'Proses/Generate', maka hitung belum bayar.
+  const isPaid = resep.kunjungan.jenisPelayanan === 'UKM' || 
+                 (resep.kunjungan.tagihan && resep.kunjungan.tagihan.statusTagihan === 'LUNAS');
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto p-8 pb-20">
@@ -159,6 +166,22 @@ export default function ProsesResepPage() {
                 </div>
               )}
 
+              {!isPaid && (
+                <div className="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4">
+                  <div className="flex">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 mr-2" />
+                    <div>
+                      <p className="text-sm text-amber-800 font-bold">
+                        Menunggu Pembayaran Kasir
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Pasien belum menyelesaikan pembayaran di Kasir. Tombol "Selesai Siapkan Obat" akan terkunci sampai pembayaran lunas.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 {resep.details.map((detail, index) => {
                   const isStockSufficient = detail.obat.stok >= detail.jumlah;
@@ -211,7 +234,7 @@ export default function ProsesResepPage() {
               
               <button
                 onClick={handleProses}
-                disabled={isProcessing || hasInsufficientStock}
+                disabled={isProcessing || hasInsufficientStock || !isPaid}
                 className="flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (

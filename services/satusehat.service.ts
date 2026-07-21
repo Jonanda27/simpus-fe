@@ -53,7 +53,7 @@ export const satusehatService = {
     }
   },
   
-  syncPoliklinikLocation: async (id: string) => {
+  syncPoliklinikLocation: async (id: number) => {
     try {
       const response = await api.post(`/satusehat/lokasi/poli/${id}`);
       return response.data;
@@ -62,6 +62,18 @@ export const satusehatService = {
         throw error.response.data;
       }
       throw new Error('Gagal terhubung ke server');
+    }
+  },
+
+  searchKFA: async (keyword: string) => {
+    try {
+      const response = await api.get(`/satusehat/kfa?keyword=${encodeURIComponent(keyword)}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw error.response.data;
+      }
+      throw new Error('Gagal mencari data KFA di server');
     }
   }
 };

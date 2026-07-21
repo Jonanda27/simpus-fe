@@ -18,6 +18,8 @@ export default function TabAsesmen({
   const [icdResults, setIcdResults] = useState<any[]>([]);
   const [isSearchingIcd, setIsSearchingIcd] = useState(false);
   const [selectedJenis, setSelectedJenis] = useState('Utama');
+  const [selectedStatusKlinis, setSelectedStatusKlinis] = useState('Aktif');
+  const [selectedStatusVerifikasi, setSelectedStatusVerifikasi] = useState('Suspek');
 
   const handleSearchICD = async () => {
     if (icdSearchTerm.length < 3) {
@@ -52,7 +54,9 @@ export default function TabAsesmen({
       icd10Id: item.id_icd10,
       kode_icd10: item.kode_icd10,
       nama_diagnosis: item.nama_diagnosis,
-      jenisDiagnosis: selectedJenis
+      jenisDiagnosis: selectedJenis,
+      statusKlinis: selectedStatusKlinis,
+      statusVerifikasi: selectedStatusVerifikasi
     };
 
     setSoapData({
@@ -126,6 +130,32 @@ export default function TabAsesmen({
                     <option value="Komplikasi">Komplikasi</option>
                   </select>
                 </div>
+                <div className="w-full md:w-1/4">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Status Klinis</label>
+                  <select
+                    value={selectedStatusKlinis}
+                    onChange={(e) => setSelectedStatusKlinis(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="Aktif">Aktif</option>
+                    <option value="Sembuh">Sembuh</option>
+                    <option value="Kambuh">Kambuh</option>
+                    <option value="Remisi">Remisi</option>
+                  </select>
+                </div>
+                <div className="w-full md:w-1/4">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Status Verifikasi</label>
+                  <select
+                    value={selectedStatusVerifikasi}
+                    onChange={(e) => setSelectedStatusVerifikasi(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="Suspek">Suspek</option>
+                    <option value="Kerja">Kerja</option>
+                    <option value="Definitif">Definitif</option>
+                    <option value="Menyingkirkan">Menyingkirkan (Rule Out)</option>
+                  </select>
+                </div>
               </div>
 
               {icdResults.length > 0 && (
@@ -169,6 +199,12 @@ export default function TabAsesmen({
                       <div className="text-xs text-gray-500 mt-0.5">
                         <span className="font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full mr-2">
                           {diag.jenisDiagnosis}
+                        </span>
+                        <span className="font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full mr-2">
+                          {diag.statusKlinis}
+                        </span>
+                        <span className="font-semibold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mr-2">
+                          {diag.statusVerifikasi}
                         </span>
                       </div>
                     </div>

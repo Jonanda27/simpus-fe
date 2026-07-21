@@ -39,6 +39,9 @@ export interface ResepData {
     poliklinik: {
       namaPoli: string;
     };
+    tagihan?: {
+      statusTagihan: string;
+    };
   };
   details: ResepDetail[];
 }
