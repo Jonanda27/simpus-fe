@@ -35,11 +35,11 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
     );
   };
 
-  // API Wilayah (EMSIFA)
-  const API_BASE = 'https://www.emsifa.com/api-wilayah-indonesia/api';
+  // API Wilayah (Ibnux)
+  const API_BASE = 'https://ibnux.github.io/data-indonesia';
 
   useEffect(() => {
-    fetch(`${API_BASE}/provinces.json`)
+    fetch(`${API_BASE}/provinsi.json`)
       .then(res => res.json())
       .then(data => setProvinces(data))
       .catch(err => console.error(err));
@@ -47,14 +47,14 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
 
   useEffect(() => {
     if (selectedProvName) {
-      const prov = provinces.find(p => p.name === selectedProvName);
+      const prov = provinces.find(p => p.nama === selectedProvName);
       if (prov) {
-        fetch(`${API_BASE}/regencies/${prov.id}.json`)
+        fetch(`${API_BASE}/kabupaten/${prov.id}.json`)
           .then(res => res.json())
           .then(data => {
             setRegencies(data);
             // Reset lower levels
-            if (selectedKabName && !data.find((d: any) => d.name.toUpperCase() === selectedKabName.toUpperCase())) {
+            if (selectedKabName && !data.find((d: any) => d.nama.toUpperCase() === selectedKabName.toUpperCase())) {
               setValue('kabupatenKota', '');
               setValue('kecamatan', '');
               setValue('desaKelurahan', '');
@@ -69,14 +69,14 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
 
   useEffect(() => {
     if (selectedKabName) {
-      const reg = regencies.find(r => r.name === selectedKabName);
+      const reg = regencies.find(r => r.nama === selectedKabName);
       if (reg) {
-        fetch(`${API_BASE}/districts/${reg.id}.json`)
+        fetch(`${API_BASE}/kecamatan/${reg.id}.json`)
           .then(res => res.json())
           .then(data => {
             setDistricts(data);
             // Reset lower levels
-            if (selectedKecName && !data.find((d: any) => d.name.toUpperCase() === selectedKecName.toUpperCase())) {
+            if (selectedKecName && !data.find((d: any) => d.nama.toUpperCase() === selectedKecName.toUpperCase())) {
               setValue('kecamatan', '');
               setValue('desaKelurahan', '');
             }
@@ -90,14 +90,14 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
 
   useEffect(() => {
     if (selectedKecName) {
-      const dist = districts.find(d => d.name === selectedKecName);
+      const dist = districts.find(d => d.nama === selectedKecName);
       if (dist) {
-        fetch(`${API_BASE}/villages/${dist.id}.json`)
+        fetch(`${API_BASE}/kelurahan/${dist.id}.json`)
           .then(res => res.json())
           .then(data => {
             setVillages(data);
             const selectedDesaName = watch('desaKelurahan');
-            if (selectedDesaName && !data.find((d: any) => d.name.toUpperCase() === selectedDesaName.toUpperCase())) {
+            if (selectedDesaName && !data.find((d: any) => d.nama.toUpperCase() === selectedDesaName.toUpperCase())) {
               setValue('desaKelurahan', '');
             }
           })
@@ -150,7 +150,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             >
               <option value="">Pilih Provinsi</option>
               {provinces.map(p => (
-                <option key={p.id} value={p.name}>{toTitleCase(p.name)}</option>
+                <option key={p.id} value={p.nama}>{toTitleCase(p.nama)}</option>
               ))}
             </select>
             {errors.provinsi && <p className="text-red-500 text-xs mt-1">{errors.provinsi.message}</p>}
@@ -166,7 +166,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             >
               <option value="">Pilih Kabupaten/Kota</option>
               {regencies.map(r => (
-                <option key={r.id} value={r.name}>{toTitleCase(r.name)}</option>
+                <option key={r.id} value={r.nama}>{toTitleCase(r.nama)}</option>
               ))}
             </select>
             {errors.kabupatenKota && <p className="text-red-500 text-xs mt-1">{errors.kabupatenKota.message}</p>}
@@ -182,7 +182,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             >
               <option value="">Pilih Kecamatan</option>
               {districts.map(d => (
-                <option key={d.id} value={d.name}>{toTitleCase(d.name)}</option>
+                <option key={d.id} value={d.nama}>{toTitleCase(d.nama)}</option>
               ))}
             </select>
             {errors.kecamatan && <p className="text-red-500 text-xs mt-1">{errors.kecamatan.message}</p>}
@@ -198,7 +198,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
             >
               <option value="">Pilih Desa/Kelurahan</option>
               {villages.map(v => (
-                <option key={v.id} value={v.name}>{toTitleCase(v.name)}</option>
+                <option key={v.id} value={v.nama}>{toTitleCase(v.nama)}</option>
               ))}
             </select>
             {errors.desaKelurahan && <p className="text-red-500 text-xs mt-1">{errors.desaKelurahan.message}</p>}

@@ -23,8 +23,6 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             className
           )}
           ref={ref}
-          defaultValue=""
-          required
           {...props}
         >
           <option value="" disabled hidden>Pilih opsi</option>
