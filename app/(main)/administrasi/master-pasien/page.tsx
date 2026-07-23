@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Users, FileText, CheckCircle, Trash2, Edit, RefreshCw } from 'lucide-react';
 import { usePasienStore } from '@/store/pasien.store';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function MasterPasienAdministrasiPage() {
   const { pasiens, isLoading, fetchPasiens, deletePasien, syncPasienIHS } = usePasienStore();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingId, setSyncingId] = useState<number | null>(null);
-
   useEffect(() => {
     fetchPasiens();
   }, [fetchPasiens]);
@@ -59,7 +60,7 @@ export default function MasterPasienAdministrasiPage() {
             />
           </div>
           <Link 
-            href="/administrasi/pendaftaran"
+            href="/administrasi/master-pasien/baru-satusehat"
             className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-none shadow-sm transition-colors whitespace-nowrap"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -77,18 +78,17 @@ export default function MasterPasienAdministrasiPage() {
                 <th className="py-4 px-6">Nama Lengkap</th>
                 <th className="py-4 px-6">Kontak</th>
                 <th className="py-4 px-6">Tgl Lahir / Usia</th>
-                <th className="py-4 px-6">Penjamin</th>
                 <th className="py-4 px-6 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">Memuat data...</td>
+                  <td colSpan={5} className="py-8 text-center text-gray-500">Memuat data...</td>
                 </tr>
               ) : filteredPasiens.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">
+                  <td colSpan={5} className="py-8 text-center text-gray-500">
                     {searchQuery ? 'Tidak ada pasien yang cocok dengan pencarian.' : 'Belum ada data pasien.'}
                   </td>
                 </tr>
@@ -120,7 +120,14 @@ export default function MasterPasienAdministrasiPage() {
                         )}
                       </td>
                       <td className="py-4 px-6">
-                        <div className="font-semibold text-gray-900">{p.namaLengkap}</div>
+                        <div className="font-semibold text-gray-900 flex items-center gap-2">
+                          {p.namaLengkap}
+                          {p.dataBayi && (
+                            <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider rounded-sm border border-sky-200 flex-shrink-0">
+                              Bayi
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-500">{p.jenisKelamin}</div>
                       </td>
                       <td className="py-4 px-6">
@@ -129,11 +136,6 @@ export default function MasterPasienAdministrasiPage() {
                       <td className="py-4 px-6">
                         <div className="text-sm text-gray-700">{new Date(p.tanggalLahir).toLocaleDateString('id-ID')}</div>
                         <div className="text-xs text-gray-500">{age} Tahun</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-none ${penjaminUtama.includes('BPJS') ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {penjaminUtama}
-                        </span>
                       </td>
                       <td className="py-4 px-6 text-right space-x-2">
                         {!p.noIHS && p.nik && (

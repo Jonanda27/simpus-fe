@@ -65,6 +65,7 @@ export interface Pasien {
     nomorPolis: string;
     masaBerlakuAsuransi: string;
   };
+  dataBayi?: any;
 }
 
 export type PasienPayload = RegistrationFormData;

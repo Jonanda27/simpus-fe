@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue, UseFormReset } from 'react-hook-form';
-import { Search, ShieldCheck, Loader2, UserPlus, History, Baby } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, UserPlus, History, Baby, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { RegistrationFormData } from '../schema';
 import { pasienService } from '@/services/pasien.service';
 import { satusehatService } from '@/services/satusehat.service';
+import { useRouter } from 'next/navigation';
 
 interface Step1Props {
   register: UseFormRegister<RegistrationFormData>;
@@ -21,6 +22,8 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [showSatusehatAlert, setShowSatusehatAlert] = useState(false);
+  const router = useRouter();
 
   // By default, if nothing is selected, we assume 'Baru'
   const currentSkenario = isBayi ? 'Bayi' : (statusPasien === 'Lama' ? 'Lama' : 'Baru');
@@ -137,9 +140,11 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
         if (response.data.birthDate) setValue('tanggalLahir', response.data.birthDate);
         
         alert("Data Kemenkes berhasil ditemukan dan diisikan otomatis!");
+      } else {
+        setShowSatusehatAlert(true);
       }
     } catch (error: any) {
-      alert(error.message || "Gagal menarik data dari SATUSEHAT");
+      setShowSatusehatAlert(true);
     } finally {
       setIsValidating(false);
     }
@@ -305,6 +310,50 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
           <Select label="Kewarganegaraan *" {...register('kewarganegaraan')} error={errors.kewarganegaraan?.message} options={[{ label: 'WNI (Warga Negara Indonesia)', value: 'WNI' }, { label: 'WNA (Warga Negara Asing)', value: 'WNA' }]} />
         </div>
       </div>
+
+      {/* MODAL PERINGATAN NIK TIDAK DITEMUKAN */}
+      {showSatusehatAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-[2px] px-4 transition-all">
+          <div className="bg-white rounded-none shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-white shadow-sm ring-1 ring-red-100">
+                <AlertTriangle className="w-7 h-7 text-red-600" />
+              </div>
+              
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Data Tidak Ditemukan</h3>
+              
+              <p className="text-slate-600 text-sm mb-2 leading-relaxed">
+                NIK <span className="font-bold text-slate-900">{watch('nik')}</span> belum terdaftar di database SATUSEHAT Kemenkes.
+              </p>
+              
+              <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                Untuk melanjutkan pendaftaran kunjungan, data identitas dan demografi pasien wajib didaftarkan terlebih dahulu ke sistem Kemenkes.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3 justify-center w-full">
+                <button
+                  type="button"
+                  onClick={() => setShowSatusehatAlert(false)}
+                  className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-full sm:w-1/3"
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSatusehatAlert(false);
+                    router.push('/administrasi/master-pasien/baru-satusehat');
+                  }}
+                  className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 w-full sm:flex-1 shadow-sm"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Daftarkan Pasien
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
