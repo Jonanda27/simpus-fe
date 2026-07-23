@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from 'react-hook-form';
+import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue, UseFormReset } from 'react-hook-form';
 import { Search, ShieldCheck, Loader2, UserPlus, History, Baby } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { RegistrationFormData } from '../schema';
 import { pasienService } from '@/services/pasien.service';
+import { satusehatService } from '@/services/satusehat.service';
 
 interface Step1Props {
   register: UseFormRegister<RegistrationFormData>;
   errors: FieldErrors<RegistrationFormData>;
   watch: UseFormWatch<RegistrationFormData>;
   setValue: UseFormSetValue<RegistrationFormData>;
+  reset: UseFormReset<RegistrationFormData>;
 }
 
-export default function Step1Identitas({ register, errors, watch, setValue }: Step1Props) {
+export default function Step1Identitas({ register, errors, watch, setValue, reset }: Step1Props) {
   const isBayi = watch('isBayi');
   const statusPasien = watch('statusPasien');
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +33,10 @@ export default function Step1Identitas({ register, errors, watch, setValue }: St
   }, [statusPasien, setValue]);
 
   const setSkenario = (type: 'Baru' | 'Lama' | 'Bayi') => {
+    // Reset seluruh field terlebih dahulu agar bersih
+    reset();
+
+    // Kembalikan nilai skenario karena reset() menghapus semuanya
     if (type === 'Bayi') {
       setValue('statusPasien', 'Baru'); // Technically a new patient
       setValue('isBayi', true);
@@ -108,13 +114,35 @@ export default function Step1Identitas({ register, errors, watch, setValue }: St
     }
   };
 
-  const handleValidasiSatusehat = () => {
+  const handleValidasiSatusehat = async () => {
+    const nik = watch('nik');
+    if (!nik || nik.length !== 16) {
+      alert("Masukkan 16 digit NIK terlebih dahulu");
+      return;
+    }
+    
     setIsValidating(true);
-    setTimeout(() => {
-      setValue('noRekamMedis', 'RM-' + Math.floor(Math.random() * 1000000));
-      setValue('noIHS', 'IHS-' + Math.floor(Math.random() * 1000000));
+    try {
+      const response = await satusehatService.checkPatientNIK(nik);
+      if (response.success && response.data) {
+        // Generate No RM if empty
+        const currentRm = watch('noRekamMedis');
+        if (!currentRm) {
+          setValue('noRekamMedis', 'RM-' + Math.floor(Math.random() * 1000000));
+        }
+        
+        setValue('noIHS', response.data.ihsNumber || '');
+        if (response.data.pasienName) setValue('namaLengkap', response.data.pasienName);
+        if (response.data.gender) setValue('jenisKelamin', response.data.gender === 'male' ? 'Laki-laki' : 'Perempuan');
+        if (response.data.birthDate) setValue('tanggalLahir', response.data.birthDate);
+        
+        alert("Data Kemenkes berhasil ditemukan dan diisikan otomatis!");
+      }
+    } catch (error: any) {
+      alert(error.message || "Gagal menarik data dari SATUSEHAT");
+    } finally {
       setIsValidating(false);
-    }, 1000);
+    }
   };
 
   const formatPascalCase = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,26 +214,25 @@ export default function Step1Identitas({ register, errors, watch, setValue }: St
 
       {/* DYNAMIC TOP SECTION */}
       {currentSkenario === 'Lama' && (
-        <div className="p-6 bg-gray-50 border border-gray-200 rounded-none animate-in fade-in slide-in-from-top-2">
-          <h3 className="text-md font-semibold text-gray-900 mb-4 flex items-center gap-2"><Search className="w-5 h-5 text-gray-500" /> Pencarian Data Pasien Lama</h3>
+        <div className="animate-in fade-in slide-in-from-top-2">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">Pencarian Data Pasien Lama</h3>
           <div className="flex flex-col md:flex-row items-end gap-4">
             <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Masukkan NIK atau Nomor RM</label>
-              <input 
-                type="text" 
+              <Input 
+                label="Masukkan NIK atau Nomor RM"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Contoh: 3171... atau RM-2023..." 
-                className="flex h-12 w-full rounded-none border border-gray-300 bg-white px-4 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxLength={16}
               />
             </div>
             <button 
               type="button" 
               onClick={handleSearchPasienLama}
               disabled={isSearching}
-              className="h-12 px-8 w-full md:w-auto bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2 transition-colors rounded-none"
+              className="h-10 px-8 w-full md:w-auto bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2 transition-colors rounded-none"
             >
-              {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               Cari & Tarik Data
             </button>
           </div>
@@ -236,7 +263,7 @@ export default function Step1Identitas({ register, errors, watch, setValue }: St
 
           <div className="md:col-span-2 flex flex-col md:flex-row gap-4 items-start">
             <div className="flex-1 w-full">
-              <Input label="NIK (Nomor Induk Kependudukan) *" placeholder="16 digit angka" maxLength={16} {...register('nik')} error={errors.nik?.message} />
+              <Input label="NIK (Nomor Induk Kependudukan) *" placeholder="16 digit angka" maxLength={16} readOnly={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50' : ''} {...register('nik')} error={errors.nik?.message} />
             </div>
             {currentSkenario !== 'Lama' && (
               <button 
@@ -253,19 +280,19 @@ export default function Step1Identitas({ register, errors, watch, setValue }: St
 
 
 
-          <Input label="Nomor KK (Opsional)" placeholder="16 digit angka" maxLength={16} {...register('noKk')} error={errors.noKk?.message} />
-          <Input label="Nama Lengkap *" placeholder="Sesuai KTP" {...namaRest} onChange={(e) => onNamaChange(formatPascalCase(e))} error={errors.namaLengkap?.message} />
+          <Input label="Nomor KK (Opsional)" placeholder="16 digit angka" maxLength={16} readOnly={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50' : ''} {...register('noKk')} error={errors.noKk?.message} />
+          <Input label="Nama Lengkap *" placeholder="Sesuai KTP" readOnly={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50' : ''} {...namaRest} onChange={(e) => onNamaChange(formatPascalCase(e))} error={errors.namaLengkap?.message} />
           
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Tempat Lahir *" placeholder="Kota kelahiran" {...tempatRest} onChange={(e) => onTempatChange(formatPascalCase(e))} error={errors.tempatLahir?.message} />
-            <Input label="Tanggal Lahir *" type="date" {...register('tanggalLahir')} error={errors.tanggalLahir?.message} />
+            <Input label="Tempat Lahir *" placeholder="Kota kelahiran" readOnly={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50' : ''} {...tempatRest} onChange={(e) => onTempatChange(formatPascalCase(e))} error={errors.tempatLahir?.message} />
+            <Input label="Tanggal Lahir *" type="date" readOnly={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50' : ''} {...register('tanggalLahir')} error={errors.tanggalLahir?.message} />
           </div>
           
-          <Select label="Jenis Kelamin *" {...register('jenisKelamin')} error={errors.jenisKelamin?.message} options={[{ label: 'Laki-laki', value: 'Laki-laki' }, { label: 'Perempuan', value: 'Perempuan' }]} />
+          <Select label="Jenis Kelamin *" disabled={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50 disabled:opacity-100 disabled:text-gray-900' : ''} {...register('jenisKelamin')} error={errors.jenisKelamin?.message} options={[{ label: 'Laki-laki', value: 'Laki-laki' }, { label: 'Perempuan', value: 'Perempuan' }]} />
           
           <div className="grid grid-cols-2 gap-4">
-            <Select label="Golongan Darah" {...register('golonganDarah')} error={errors.golonganDarah?.message} options={[{ label: 'A', value: 'A' }, { label: 'B', value: 'B' }, { label: 'AB', value: 'AB' }, { label: 'O', value: 'O' }]} />
-            <Select label="Rhesus" {...register('rhesus')} error={errors.rhesus?.message} options={[{ label: 'Positif (+)', value: '+' }, { label: 'Negatif (-)', value: '-' }]} />
+            <Select label="Golongan Darah" disabled={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50 disabled:opacity-100 disabled:text-gray-900' : ''} {...register('golonganDarah')} error={errors.golonganDarah?.message} options={[{ label: 'A', value: 'A' }, { label: 'B', value: 'B' }, { label: 'AB', value: 'AB' }, { label: 'O', value: 'O' }]} />
+            <Select label="Rhesus" disabled={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50 disabled:opacity-100 disabled:text-gray-900' : ''} {...register('rhesus')} error={errors.rhesus?.message} options={[{ label: 'Positif (+)', value: '+' }, { label: 'Negatif (-)', value: '-' }]} />
           </div>
 
           <Select label="Agama *" {...register('agama')} error={errors.agama?.message} options={[{ label: 'Islam', value: 'Islam' }, { label: 'Kristen', value: 'Kristen' }, { label: 'Katolik', value: 'Katolik' }, { label: 'Hindu', value: 'Hindu' }, { label: 'Buddha', value: 'Buddha' }, { label: 'Konghucu', value: 'Konghucu' }]} />

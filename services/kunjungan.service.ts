@@ -15,5 +15,20 @@ export const kunjunganService = {
   panggilKunjungan: async (id: string): Promise<any> => {
     const response = await api.post(`/kunjungan/${id}/panggil`);
     return response.data.data;
+  },
+
+  getDashboardStats: async (): Promise<any> => {
+    const response = await api.get('/kunjungan/dashboard-stats');
+    return response.data.data;
+  },
+
+  getPerawatDashboardStats: async (): Promise<any> => {
+    const response = await api.get('/kunjungan/perawat/dashboard-stats');
+    return response.data.data;
+  },
+
+  getDokterDashboardStats: async (): Promise<any> => {
+    const response = await api.get('/kunjungan/dokter/dashboard-stats');
+    return response.data.data;
   }
 };

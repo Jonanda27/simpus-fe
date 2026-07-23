@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AntrianDokter, RekamMedis, SOAPPayload, DiagnosaItem, DiagnosisPasien } from '../types/rawatJalan.types';
+import { AntrianDokter, RekamMedis, SOAPPayload, DiagnosaItem, DiagnosisPasien, TindakanPasien } from '../types/rawatJalan.types';
 import { rawatJalanService } from '../services/rawatJalan.service';
 import { Screening } from '../types/screening.types';
 import { screeningService } from '../services/screening.service';
@@ -13,7 +13,8 @@ interface RawatJalanState {
   rekamMedis: RekamMedis | null;
   screeningData: Screening | null;
   diagnosaList: DiagnosisPasien[];
-  tindakanList: any[]; // Menggunakan any[] untuk simple array atau TindakanPasien[]
+  tindakanList: TindakanPasien[];
+  alergiList: any[];
 
   // UI State
   fase: 1 | 2; // 1 = Pemeriksaan Klinis, 2 = Tindak Lanjut (Resep/Rujukan)
@@ -27,9 +28,11 @@ interface RawatJalanState {
   pilihPasien: (kunjungan: AntrianDokter) => Promise<void>;
   simpanSOAP: (payload: SOAPPayload) => Promise<void>;
   simpanDiagnosa: (diagnosa: DiagnosaItem[]) => Promise<void>;
+  simpanAlergi: (alergiArr: any[]) => Promise<void>;
   simpanTindakan: (tindakan: any[]) => Promise<void>;
   simpanOrderLab: (payload: OrderLaboratoriumPayload) => Promise<void>;
   selesaikanPemeriksaan: () => Promise<void>;
+  tundaPemeriksaan: (payload: SOAPPayload) => Promise<void>;
 
   // Fase Tindak Lanjut
   setFase: (fase: 1 | 2) => void;
@@ -48,6 +51,7 @@ export const useRawatJalanStore = create<RawatJalanState>((set, get) => ({
   screeningData: null,
   diagnosaList: [],
   tindakanList: [],
+  alergiList: [],
 
   fase: 1,
   isLoadingAntrian: false,
@@ -111,7 +115,17 @@ export const useRawatJalanStore = create<RawatJalanState>((set, get) => ({
         console.error('Gagal load tindakan:', e);
       }
 
-      // 5. Refresh antrian agar status terupdate
+      // 5. Load Alergi
+      try {
+        const alRes = await rawatJalanService.getAlergi(kunjungan.id);
+        if (alRes.success) {
+          set({ alergiList: alRes.data });
+        }
+      } catch (e) {
+        console.error('Gagal load alergi:', e);
+      }
+
+      // 6. Refresh antrian agar status terupdate
       get().fetchAntrian();
 
       set({ isLoadingRekamMedis: false });
@@ -137,6 +151,30 @@ export const useRawatJalanStore = create<RawatJalanState>((set, get) => ({
     } catch (err: any) {
       set({
         error: err?.response?.data?.message || 'Gagal menyimpan SOAP',
+        isSaving: false,
+      });
+      throw err;
+    }
+  },
+
+  /** Simpan Alergi */
+  simpanAlergi: async (alergiArr: any[]) => {
+    const kunjungan = get().selectedKunjungan;
+    if (!kunjungan) return;
+
+    set({ isSaving: true, error: null });
+    try {
+      await rawatJalanService.simpanAlergi(kunjungan.id, alergiArr);
+      
+      const alRes = await rawatJalanService.getAlergi(kunjungan.id);
+      if (alRes.success) {
+        set({ alergiList: alRes.data });
+      }
+
+      set({ isSaving: false });
+    } catch (err: any) {
+      set({
+        error: err?.response?.data?.message || 'Gagal menyimpan alergi',
         isSaving: false,
       });
       throw err;
@@ -216,6 +254,31 @@ export const useRawatJalanStore = create<RawatJalanState>((set, get) => ({
     } catch (err: any) {
       set({
         error: err?.response?.data?.message || 'Gagal menyelesaikan pemeriksaan',
+        isSaving: false,
+      });
+      throw err;
+    }
+  },
+
+  /** Tunda Pemeriksaan (Kedaruratan) */
+  tundaPemeriksaan: async (payload: SOAPPayload) => {
+    const { selectedKunjungan, rekamMedis } = get();
+    if (!selectedKunjungan || !rekamMedis) return;
+
+    set({ isSaving: true, error: null });
+    try {
+      // Simpan SOAP draft dulu
+      await rawatJalanService.simpanSOAP(rekamMedis.id, payload);
+      
+      // Ubah status ke ditunda (MENUNGGU)
+      await rawatJalanService.tundaPemeriksaan(selectedKunjungan.id);
+      
+      set({ isSaving: false });
+      get().clearSelection();
+      get().fetchAntrian();
+    } catch (err: any) {
+      set({
+        error: err?.response?.data?.message || 'Gagal menunda pemeriksaan',
         isSaving: false,
       });
       throw err;

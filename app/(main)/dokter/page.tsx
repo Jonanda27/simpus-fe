@@ -20,24 +20,7 @@ import { rawatJalanService } from '@/services/rawatJalan.service';
 import { AntrianDokter } from '@/types/rawatJalan.types';
 import { useAuthStore } from '@/store/auth.store';
 
-// ─────────────────────────────────────────────
-// DUMMY DATA
-// ─────────────────────────────────────────────
-const dummyStats = {
-  totalHariIni: 47,
-  menunggu: 12,
-  sedangDilayani: 5,
-  selesai: 30,
-};
-
-const dummyAntrian: AntrianDokter[] = [
-  { id: '1', pasienId: 'p1', noAntrian: 'A-001', jamRegistrasi: '08:05', pasien: { id: 'p1', namaLengkap: 'Budi Santoso', noRM: 'RM-2024-0091', tanggalLahir: '1980-01-01', jenisKelamin: 'L' }, poliklinik: { id: 'poli1', namaPoli: 'Poli Umum' }, screening: { keluhanUtama: 'Sakit kepala dan demam sejak 2 hari yang lalu' } as any, statusKunjungan: 'MENUNGGU_DOKTER', tanggalRegistrasi: '2024-05-15', jenisPelayanan: 'Rawat Jalan', statusPasien: 'Lama', prioritas: 'Umum' },
-  { id: '2', pasienId: 'p2', noAntrian: 'A-002', jamRegistrasi: '08:12', pasien: { id: 'p2', namaLengkap: 'Siti Aminah', noRM: 'RM-2024-0154', tanggalLahir: '1990-01-01', jenisKelamin: 'P' }, poliklinik: { id: 'poli1', namaPoli: 'Poli Umum' }, screening: { keluhanUtama: 'Batuk berdahak dan pilek' } as any, statusKunjungan: 'SEDANG_DIPERIKSA', tanggalRegistrasi: '2024-05-15', jenisPelayanan: 'Rawat Jalan', statusPasien: 'Lama', prioritas: 'Umum' },
-  { id: '3', pasienId: 'p3', noAntrian: 'A-003', jamRegistrasi: '08:31', pasien: { id: 'p3', namaLengkap: 'Dewi Rahayu', noRM: 'RM-2023-0501', tanggalLahir: '2000-01-01', jenisKelamin: 'P' }, poliklinik: { id: 'poli1', namaPoli: 'Poli Umum' }, screening: { keluhanUtama: 'Nyeri perut bagian bawah' } as any, statusKunjungan: 'MENUNGGU_DOKTER', tanggalRegistrasi: '2024-05-15', jenisPelayanan: 'Rawat Jalan', statusPasien: 'Lama', prioritas: 'Umum' },
-  { id: '4', pasienId: 'p4', noAntrian: 'A-004', jamRegistrasi: '08:40', pasien: { id: 'p4', namaLengkap: 'Hendra Wijaya', noRM: 'RM-2022-0211', tanggalLahir: '1970-01-01', jenisKelamin: 'L' }, poliklinik: { id: 'poli1', namaPoli: 'Poli Umum' }, screening: null, statusKunjungan: 'MENUNGGU_DOKTER', tanggalRegistrasi: '2024-05-15', jenisPelayanan: 'Rawat Jalan', statusPasien: 'Lama', prioritas: 'Umum' },
-  { id: '5', pasienId: 'p5', noAntrian: 'A-005', jamRegistrasi: '07:30', pasien: { id: 'p5', namaLengkap: 'Andi Mulyana', noRM: 'RM-2021-0088', tanggalLahir: '1985-05-10', jenisKelamin: 'L' }, poliklinik: { id: 'poli1', namaPoli: 'Poli Umum' }, screening: { keluhanUtama: 'Gatal-gatal di seluruh tubuh' } as any, statusKunjungan: 'SELESAI', tanggalRegistrasi: '2024-05-15', jenisPelayanan: 'Rawat Jalan', statusPasien: 'Lama', prioritas: 'Umum' },
-  { id: '6', pasienId: 'p6', noAntrian: 'A-006', jamRegistrasi: '07:45', pasien: { id: 'p6', namaLengkap: 'Putri Larasati', noRM: 'RM-2024-0120', tanggalLahir: '1995-08-20', jenisKelamin: 'P' }, poliklinik: { id: 'poli1', namaPoli: 'Poli Umum' }, screening: { keluhanUtama: 'Mual dan muntah sejak semalam' } as any, statusKunjungan: 'MENUNGGU_FARMASI', tanggalRegistrasi: '2024-05-15', jenisPelayanan: 'Rawat Jalan', statusPasien: 'Lama', prioritas: 'Umum' },
-];
+import { kunjunganService } from '@/services/kunjungan.service';
 
 export default function DokterDashboardPage() {
   const { user } = useAuthStore();
@@ -46,16 +29,43 @@ export default function DokterDashboardPage() {
   const [currentTime, setCurrentTime] = useState('');
   const [isClient, setIsClient] = useState(false);
 
+  const [stats, setStats] = useState({
+    totalHariIni: 0,
+    menunggu: 0,
+    sedangDilayani: 0,
+    selesai: 0
+  });
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [antrianRes, statsData] = await Promise.all([
+        rawatJalanService.getAntrian(),
+        kunjunganService.getDokterDashboardStats()
+      ]);
+      setAntrian(antrianRes.data || []);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     setIsClient(true);
-    // Menggunakan dummy data
-    setAntrian(dummyAntrian);
-    setIsLoading(false);
+    fetchData();
+
+    // Auto refresh every 30 seconds
+    const intervalData = setInterval(fetchData, 30000);
 
     const tick = () => setCurrentTime(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     tick();
     const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearInterval(intervalData);
+    };
   }, []);
 
   const getStatusBadge = (status: string) => {
@@ -75,9 +85,7 @@ export default function DokterDashboardPage() {
 
   if (!isClient) return null;
 
-  const totalPasien = antrian.length;
-  const menunggu = antrian.filter(a => a.statusKunjungan === 'MENUNGGU_DOKTER').length;
-  const selesai = antrian.filter(a => a.statusKunjungan === 'SELESAI' || a.statusKunjungan === 'MENUNGGU_FARMASI').length;
+
 
   return (
     <div className="min-h-screen bg-gray-50 animate-in fade-in duration-500">
@@ -111,12 +119,14 @@ export default function DokterDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {/* Card 1 */}
           <div className="bg-white border border-gray-200 shadow-sm p-6 relative overflow-hidden flex flex-col justify-between">
-            {/* Top Right Decoration */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full translate-x-4 -translate-y-4"></div>
+            {/* Top Right Icon */}
+            <div className="absolute top-6 right-6 w-10 h-10 bg-blue-100 flex items-center justify-center rounded">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
             
             <div className="relative z-10">
               <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Total Kunjungan</p>
-              <h3 className="text-4xl font-extrabold text-gray-900">{dummyStats.totalHariIni}</h3>
+              <h3 className="text-4xl font-extrabold text-gray-900">{stats.totalHariIni}</h3>
               <p className="text-sm text-gray-500 mt-1">Hari ini</p>
             </div>
             
@@ -134,14 +144,14 @@ export default function DokterDashboardPage() {
             </div>
             
             <div className="relative z-10">
-              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Antrian Aktif</p>
-              <h3 className="text-4xl font-extrabold text-gray-900">{dummyStats.menunggu}</h3>
-              <p className="text-sm text-gray-500 mt-1">Sedang menunggu poli</p>
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Menunggu Dokter</p>
+              <h3 className="text-4xl font-extrabold text-gray-900">{stats.menunggu}</h3>
+              <p className="text-sm text-gray-500 mt-1">Menunggu pemeriksaan</p>
             </div>
             
             <div className="relative z-10 mt-6 flex items-center gap-1.5 text-xs font-bold text-amber-500">
               <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-              <span>{dummyStats.sedangDilayani} pasien sedang dilayani</span>
+              <span>{stats.sedangDilayani} pasien sedang dilayani</span>
             </div>
           </div>
 
@@ -153,14 +163,14 @@ export default function DokterDashboardPage() {
             </div>
             
             <div className="relative z-10">
-              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Selesai Hari Ini</p>
-              <h3 className="text-4xl font-extrabold text-gray-900">{dummyStats.selesai}</h3>
-              <p className="text-sm text-gray-500 mt-1">Sudah dilayani</p>
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Selesai Diperiksa</p>
+              <h3 className="text-4xl font-extrabold text-gray-900">{stats.selesai}</h3>
+              <p className="text-sm text-gray-500 mt-1">Telah ditangani</p>
             </div>
             
             <div className="relative z-10 mt-6 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{Math.round((dummyStats.selesai / dummyStats.totalHariIni) * 100)}% dari total kunjungan</span>
+              <span>{stats.totalHariIni > 0 ? Math.round((stats.selesai / stats.totalHariIni) * 100) : 0}% dari total kunjungan</span>
             </div>
           </div>
         </div>
@@ -210,15 +220,34 @@ export default function DokterDashboardPage() {
                       antrian
                         .filter(a => a.statusKunjungan !== 'SELESAI' && a.statusKunjungan !== 'MENUNGGU_FARMASI')
                         .map((item) => (
-                        <tr key={item.id} className="hover:bg-indigo-50/50 transition-colors group">
+                        <tr key={item.id} className={`transition-colors group ${
+                          item.screening?.kategoriTriage?.toLowerCase() === 'merah' ? 'bg-red-50/90 hover:bg-red-100/90' :
+                          item.screening?.kategoriTriage?.toLowerCase() === 'kuning' ? 'bg-amber-50/90 hover:bg-amber-100/90' :
+                          'hover:bg-indigo-50/50'
+                        }`}>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="font-bold text-gray-900 bg-gray-100 px-2 py-1">{item.noAntrian}</span>
+                            <span className={`font-bold px-2 py-1 ${
+                               item.screening?.kategoriTriage?.toLowerCase() === 'merah' ? 'text-red-700 bg-red-200/50' :
+                               item.screening?.kategoriTriage?.toLowerCase() === 'kuning' ? 'text-amber-700 bg-amber-200/50' :
+                               'text-gray-900 bg-gray-100'
+                            }`}>{item.noAntrian}</span>
                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                               <Clock className="w-3 h-3" /> {item.jamRegistrasi}
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="font-bold text-gray-900">{item.pasien.namaLengkap}</div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="font-bold text-gray-900">{item.pasien.namaLengkap}</div>
+                              {item.screening?.kategoriTriage?.toLowerCase() === 'merah' && (
+                                <span className="animate-pulse bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-none shadow-sm tracking-wider">GAWAT</span>
+                              )}
+                              {item.screening?.kategoriTriage?.toLowerCase() === 'kuning' && (
+                                <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-none shadow-sm tracking-wider">URGENT</span>
+                              )}
+                              {(item.prioritas?.toLowerCase().includes('lansia') || item.prioritas?.toLowerCase().includes('disabilitas') || item.prioritas?.toLowerCase().includes('hamil')) && (
+                                <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-none border border-indigo-200 tracking-wider uppercase">{item.prioritas}</span>
+                              )}
+                            </div>
                             <div className="text-xs text-gray-500 font-mono mt-0.5">RM: {item.pasien.noRM}</div>
                           </td>
                           <td className="px-6 py-4">
@@ -298,16 +327,35 @@ export default function DokterDashboardPage() {
                       antrian
                         .filter(a => a.statusKunjungan === 'SELESAI' || a.statusKunjungan === 'MENUNGGU_FARMASI')
                         .map((item) => (
-                        <tr key={item.id} className="hover:bg-emerald-50/30 transition-colors group">
+                        <tr key={item.id} className={`transition-colors group ${
+                          item.screening?.kategoriTriage?.toLowerCase() === 'merah' ? 'bg-red-50/80 hover:bg-red-100/80' :
+                          item.screening?.kategoriTriage?.toLowerCase() === 'kuning' ? 'bg-amber-50/80 hover:bg-amber-100/80' :
+                          'hover:bg-emerald-50/30'
+                        }`}>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="font-bold text-gray-500 bg-gray-100 px-2 py-1">{item.noAntrian}</span>
+                            <span className={`font-bold px-2 py-1 ${
+                               item.screening?.kategoriTriage?.toLowerCase() === 'merah' ? 'text-red-700 bg-red-200/50' :
+                               item.screening?.kategoriTriage?.toLowerCase() === 'kuning' ? 'text-amber-700 bg-amber-200/50' :
+                               'text-gray-500 bg-gray-100'
+                            }`}>{item.noAntrian}</span>
                             <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                               <Clock className="w-3 h-3" /> {item.jamRegistrasi}
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="font-bold text-gray-700">{item.pasien.namaLengkap}</div>
-                            <div className="text-xs text-gray-400 font-mono mt-0.5">RM: {item.pasien.noRM}</div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="font-bold text-gray-900">{item.pasien.namaLengkap}</div>
+                              {item.screening?.kategoriTriage?.toLowerCase() === 'merah' && (
+                                <span className="animate-pulse bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-none shadow-sm tracking-wider">GAWAT DARURAT</span>
+                              )}
+                              {item.screening?.kategoriTriage?.toLowerCase() === 'kuning' && (
+                                <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-none shadow-sm tracking-wider">URGENT</span>
+                              )}
+                              {(item.prioritas?.toLowerCase().includes('lansia') || item.prioritas?.toLowerCase().includes('disabilitas') || item.prioritas?.toLowerCase().includes('hamil')) && (
+                                <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-none border border-indigo-200 tracking-wider uppercase">{item.prioritas}</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 font-mono mt-0.5">RM: {item.pasien.noRM}</div>
                           </td>
                           <td className="px-6 py-4 text-gray-500">
                             {item.screening?.keluhanUtama ? (

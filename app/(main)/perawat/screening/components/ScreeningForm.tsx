@@ -18,6 +18,7 @@ import Swal from 'sweetalert2';
 import { useScreeningStore } from '@/store/screening.store';
 import { CreateScreeningPayload } from '@/types/screening.types';
 import { Kunjungan } from '@/types/kunjungan.types';
+import { rawatJalanService } from '@/services/rawatJalan.service';
 
 export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
   const router = useRouter();
@@ -189,6 +190,12 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
 
     try {
       await createScreening(payload);
+      
+      // Save alergi if added
+      if (data.alergiArr && data.alergiArr.length > 0) {
+        await rawatJalanService.simpanAlergi(kunjungan.id, data.alergiArr);
+      }
+
       setIsSuccess(true);
     } catch (err: any) {
       Swal.fire({

@@ -91,14 +91,17 @@ export default function Step4Administrasi({ register, errors, watch, setValue }:
   useEffect(() => {
     if (jenisPelayanan === 'UGD') {
       const ugdPoli = polikliniks.find(p => p.kodePoli === 'UGD');
-      if (ugdPoli && setValue) setValue('poliTujuan', ugdPoli.id);
+      if (ugdPoli && poliTujuan !== ugdPoli.id && setValue) setValue('poliTujuan', ugdPoli.id);
     } else if (jenisPelayanan === 'Rawat Inap') {
       const inapPoli = polikliniks.find(p => p.kodePoli === 'INAP');
-      if (inapPoli && setValue) setValue('poliTujuan', inapPoli.id);
+      if (inapPoli && poliTujuan !== inapPoli.id && setValue) setValue('poliTujuan', inapPoli.id);
     } else {
-      if (setValue) setValue('poliTujuan', '');
+      const currentPoli = polikliniks.find(p => p.id === poliTujuan);
+      if (currentPoli && (currentPoli.kodePoli === 'UGD' || currentPoli.kodePoli === 'INAP')) {
+        if (setValue) setValue('poliTujuan', '');
+      }
     }
-  }, [jenisPelayanan, polikliniks, setValue]);
+  }, [jenisPelayanan, polikliniks, setValue, poliTujuan]);
   
   // Set current date & time on mount for Tanggal & Jam Registrasi
   const now = new Date();

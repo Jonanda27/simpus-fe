@@ -85,7 +85,11 @@ export default function QueueSidebar({
               className={`p-3 border-l-4 cursor-pointer transition-all ${
                 selectedKunjungan?.id === k.id 
                   ? 'border-l-indigo-600 bg-indigo-50 shadow-md border-y border-r border-indigo-200' 
-                  : 'border-l-transparent border-y border-r border-gray-200 hover:bg-gray-50'
+                  : k.screening?.kategoriTriage?.toLowerCase() === 'merah'
+                    ? 'border-l-red-600 bg-red-50/50 hover:bg-red-50 border-y border-r border-red-200'
+                    : k.screening?.kategoriTriage?.toLowerCase() === 'kuning'
+                      ? 'border-l-amber-500 bg-amber-50/50 hover:bg-amber-50 border-y border-r border-amber-200'
+                      : 'border-l-transparent border-y border-r border-gray-200 hover:bg-gray-50'
               }`}
             >
               <div className="flex flex-wrap justify-between items-start gap-1.5 mb-2">
@@ -109,7 +113,15 @@ export default function QueueSidebar({
                   {k.noAntrian.split('-').pop()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-gray-900 leading-tight truncate" title={k.pasien.namaLengkap}>{k.pasien.namaLengkap}</h3>
+                  <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                    <h3 className="font-bold text-gray-900 leading-tight truncate" title={k.pasien.namaLengkap}>{k.pasien.namaLengkap}</h3>
+                    {k.screening?.kategoriTriage?.toLowerCase() === 'merah' && (
+                      <span className="animate-pulse bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-none shadow-sm tracking-widest">GAWAT</span>
+                    )}
+                    {k.screening?.kategoriTriage?.toLowerCase() === 'kuning' && (
+                      <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-none shadow-sm tracking-widest">URGENT</span>
+                    )}
+                  </div>
                   <div className="text-[10px] sm:text-xs text-gray-600 flex flex-wrap items-center gap-x-1 mt-0.5">
                     <span>{getAge(k.pasien.tanggalLahir)} Tahun</span>
                     <span>•</span>

@@ -5,9 +5,10 @@ import { useKlinikStore } from '@/store/klinik.store';
 import { Plus, Search, CheckCircle, XCircle, Stethoscope, Activity } from 'lucide-react';
 
 export default function MasterKlinikPage() {
-  const { polikliniks, layanans, isLoadingPoli, isLoadingLayanan, fetchPoliklinik, createPoliklinik, fetchLayananByPoli, createLayanan } = useKlinikStore();
+  const { polikliniks, layanans, isLoadingPoli, isLoadingLayanan, fetchPoliklinik, createPoliklinik, fetchLayananByPoli, createLayanan, syncLocationIHS } = useKlinikStore();
   
   const [selectedPoliId, setSelectedPoliId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [isModalPoliOpen, setIsModalPoliOpen] = useState(false);
   const [isModalLayananOpen, setIsModalLayananOpen] = useState(false);
 
@@ -39,7 +40,21 @@ export default function MasterKlinikPage() {
     if (!selectedPoliId) return;
     await createLayanan({ ...formLayanan, poliklinikId: selectedPoliId, statusAktif: true });
     setIsModalLayananOpen(false);
+    setIsModalLayananOpen(false);
     setFormLayanan({ kodeLayanan: '', namaLayanan: '', tarifDasar: 0, deskripsi: '' });
+  };
+
+  const handleSyncLocation = async (e: React.MouseEvent, poliId: string) => {
+    e.stopPropagation(); // prevent triggering the parent onClick
+    setSyncingId(poliId);
+    try {
+      await syncLocationIHS(poliId);
+      alert('Berhasil mendaftarkan lokasi Poliklinik ke SATUSEHAT!');
+    } catch (error: any) {
+      alert(error.message || 'Gagal sinkronisasi Lokasi IHS');
+    } finally {
+      setSyncingId(null);
+    }
   };
 
   return (
@@ -75,8 +90,30 @@ export default function MasterKlinikPage() {
                   onClick={() => setSelectedPoliId(poli.id)}
                   className={`p-3 cursor-pointer border-l-4 transition-colors ${selectedPoliId === poli.id ? 'border-blue-600 bg-blue-50' : 'border-transparent hover:bg-gray-50'}`}
                 >
-                  <div className="font-medium text-gray-900">{poli.namaPoli}</div>
-                  <div className="text-xs text-gray-500">Kode: {poli.kodePoli}</div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-gray-900">{poli.namaPoli}</div>
+                      <div className="text-xs text-gray-500">Kode: {poli.kodePoli}</div>
+                      {poli.ihsLocationId ? (
+                        <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-none text-[10px] font-medium bg-green-100 text-green-800 border border-green-200">
+                          IHS: {poli.ihsLocationId}
+                        </div>
+                      ) : (
+                        <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-none text-[10px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                          Belum terdaftar di IHS
+                        </div>
+                      )}
+                    </div>
+                    {!poli.ihsLocationId && (
+                      <button 
+                        onClick={(e) => handleSyncLocation(e, poli.id)}
+                        disabled={syncingId === poli.id}
+                        className="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-[10px] font-medium rounded-none border border-emerald-200 disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {syncingId === poli.id ? 'Sync...' : 'Sync IHS'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))
             )}

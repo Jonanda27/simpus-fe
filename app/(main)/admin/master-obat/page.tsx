@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pill, Search, Plus, Edit2, Trash2, Loader2, X } from 'lucide-react';
 import { masterService } from '@/services/master.service';
+import { satusehatService } from '@/services/satusehat.service';
 import Swal from 'sweetalert2';
 
 export default function MasterObatPage() {
@@ -12,6 +13,13 @@ export default function MasterObatPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // KFA Search States
+  const [isKfaModalOpen, setIsKfaModalOpen] = useState(false);
+  const [kfaSearchQuery, setKfaSearchQuery] = useState('');
+  const [kfaResults, setKfaResults] = useState<any[]>([]);
+  const [isSearchingKfa, setIsSearchingKfa] = useState(false);
+  const [kfaReferencePrice, setKfaReferencePrice] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     kodeObat: '',
@@ -69,6 +77,7 @@ export default function MasterObatPage() {
       });
       setPreviewUrl(null);
     }
+    setKfaReferencePrice(null);
     setImageFile(null);
     setIsModalOpen(true);
   };
@@ -103,6 +112,66 @@ export default function MasterObatPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSearchKFA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!kfaSearchQuery.trim()) return;
+    setIsSearchingKfa(true);
+    try {
+      const res = await satusehatService.searchKFA(kfaSearchQuery);
+      if (res.success && res.data.items?.data) {
+        setKfaResults(res.data.items.data);
+      } else if (res.success && res.data.items) {
+        setKfaResults(res.data.items);
+      } else if (res.success && Array.isArray(res.data)) {
+        setKfaResults(res.data);
+      } else {
+        setKfaResults([]);
+      }
+    } catch (err: any) {
+      console.error(err);
+      Swal.fire('Error', err?.response?.data?.message || 'Gagal mencari obat di SATUSEHAT', 'error');
+    } finally {
+      setIsSearchingKfa(false);
+    }
+  };
+
+  const handleSelectKFA = (item: any) => {
+    // Extract price if available (fix_price or het_price from products/all)
+    let refPrice = null;
+    if (item.het_price) {
+      refPrice = item.het_price;
+    } else if (item.fix_price) {
+      refPrice = item.fix_price;
+    } else if (item.packaging_ids && item.packaging_ids.length > 0) {
+      refPrice = item.packaging_ids[0].pack_price || null;
+    }
+    setKfaReferencePrice(refPrice);
+
+    // Kategori & Sediaan
+    let kategoriStr = formData.kategori;
+    if (item.generik !== undefined) {
+      kategoriStr = item.generik ? 'Obat Generik' : 'Obat Paten';
+    } else if (item.farmalkes_type?.name) {
+      kategoriStr = item.farmalkes_type.name;
+    }
+
+    let sediaanStr = formData.sediaan;
+    if (item.dosage_form?.name) {
+      sediaanStr = item.dosage_form.name;
+    }
+
+    setFormData({
+      ...formData,
+      kodeObat: item.kfa_code || item.kfaCode || '',
+      namaObat: item.name || item.display || '',
+      kategori: kategoriStr,
+      sediaan: sediaanStr,
+      harga: refPrice ? refPrice : formData.harga // pre-fill harga modal
+    });
+    setIsKfaModalOpen(false);
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string, nama: string) => {
@@ -152,6 +221,12 @@ export default function MasterObatPage() {
             className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-none hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"
           >
             <Plus className="w-4 h-4 mr-2" /> Tambah Obat
+          </button>
+          <button 
+            onClick={() => setIsKfaModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-pink-600 text-white text-sm font-medium rounded-none hover:bg-pink-700 transition-colors shadow-sm whitespace-nowrap"
+          >
+            <Search className="w-4 h-4 mr-2" /> Tarik dari SATUSEHAT
           </button>
         </div>
       </div>
@@ -248,30 +323,23 @@ export default function MasterObatPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Kategori</label>
-                  <select required value={formData.kategori} onChange={e => setFormData({...formData, kategori: e.target.value})} className="w-full border border-gray-300 p-2.5 text-sm outline-none focus:ring-1 focus:ring-pink-500 rounded-none bg-white">
-                    <option>Obat Bebas</option>
-                    <option>Obat Keras</option>
-                    <option>Obat Herbal</option>
-                    <option>Alkes / BHP</option>
-                  </select>
+                  <input required type="text" value={formData.kategori} onChange={e => setFormData({...formData, kategori: e.target.value})} className="w-full border border-gray-300 p-2.5 text-sm outline-none focus:ring-1 focus:ring-pink-500 rounded-none bg-white" placeholder="Misal: Obat Bebas" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Sediaan</label>
-                  <select required value={formData.sediaan} onChange={e => setFormData({...formData, sediaan: e.target.value})} className="w-full border border-gray-300 p-2.5 text-sm outline-none focus:ring-1 focus:ring-pink-500 rounded-none bg-white">
-                    <option>Tablet</option>
-                    <option>Kapsul</option>
-                    <option>Sirup</option>
-                    <option>Salep</option>
-                    <option>Injeksi</option>
-                    <option>Botol</option>
-                  </select>
+                  <input required type="text" value={formData.sediaan} onChange={e => setFormData({...formData, sediaan: e.target.value})} className="w-full border border-gray-300 p-2.5 text-sm outline-none focus:ring-1 focus:ring-pink-500 rounded-none bg-white" placeholder="Misal: Tablet" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Harga (Rp)</label>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Harga (Rp) <span className="font-normal text-gray-500">- Input Manual</span></label>
                   <input required type="number" value={formData.harga} onChange={e => setFormData({...formData, harga: parseInt(e.target.value) || 0})} className="w-full border border-gray-300 p-2.5 text-sm outline-none focus:ring-1 focus:ring-pink-500 rounded-none" />
+                  {kfaReferencePrice !== null && (
+                    <div className="mt-1 text-[10px] text-pink-600 font-medium">
+                      Harga Dasar E-Katalog: Rp {kfaReferencePrice.toLocaleString('id-ID')}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Stok Awal</label>
@@ -308,6 +376,75 @@ export default function MasterObatPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL PENCARIAN KFA */}
+      {isKfaModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setIsKfaModalOpen(false)}></div>
+          <div className="relative bg-white rounded-none shadow-xl w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-pink-50">
+              <h3 className="text-lg font-bold text-pink-900 flex items-center gap-2">
+                <Search className="w-5 h-5 text-pink-600" />
+                Cari Kamus Farmasi SATUSEHAT
+              </h3>
+              <button onClick={() => setIsKfaModalOpen(false)} className="text-pink-400 hover:text-pink-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 border-b border-gray-100">
+              <form onSubmit={handleSearchKFA} className="flex gap-2">
+                <input 
+                  type="text" 
+                  autoFocus
+                  placeholder="Ketik nama obat (misal: Amoxicillin)..." 
+                  value={kfaSearchQuery}
+                  onChange={(e) => setKfaSearchQuery(e.target.value)}
+                  className="flex-1 border border-gray-300 p-2.5 text-sm outline-none focus:ring-1 focus:ring-pink-500 rounded-none"
+                />
+                <button 
+                  type="submit" 
+                  disabled={isSearchingKfa}
+                  className="bg-pink-600 hover:bg-pink-700 disabled:opacity-50 text-white px-6 py-2.5 text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  {isSearchingKfa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  Cari
+                </button>
+              </form>
+            </div>
+
+            <div className="overflow-y-auto p-4 flex-1 bg-gray-50/50">
+              {kfaResults.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {kfaResults.map((item, idx) => (
+                    <div 
+                      key={item.kfa_code || item.kfaCode || idx}
+                      onClick={() => handleSelectKFA(item)}
+                      className="bg-white border border-gray-200 p-4 cursor-pointer hover:border-pink-300 hover:shadow-md transition-all group relative overflow-hidden"
+                    >
+                      <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5">
+                        KFA
+                      </div>
+                      <div className="text-xs font-mono text-gray-500 mb-1">{item.kfa_code || item.kfaCode}</div>
+                      <h4 className="font-bold text-sm text-gray-900 group-hover:text-pink-700 leading-tight mb-2">
+                        {item.name || item.display}
+                      </h4>
+                      {(item.manufacturer || item.kfa_poa?.name) && (
+                        <div className="text-xs text-gray-500 line-clamp-1">
+                          Pabrik: {item.manufacturer || item.kfa_poa?.name}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500 text-sm">
+                  {isSearchingKfa ? 'Mencari ke Kemenkes...' : 'Ketik kata kunci dan tekan cari untuk menarik data dari KFA Kemenkes.'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

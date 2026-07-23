@@ -1,7 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { ScreeningFormData } from '../schema';
-import { AlertTriangle, Clock, User, FileText, Activity, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Clock, User, FileText, Activity, CheckCircle2, AlertCircle, Plus, X } from 'lucide-react';
+import { masterService } from '@/services/master.service';
+
+const MANIFESTASI_OPTIONS = [
+  { kode: '126485001', nama: 'Urticaria (Gatal-gatal)' },
+  { kode: '271807003', nama: 'Ruam Kulit (Eruption of skin)' },
+  { kode: '267036007', nama: 'Sesak Napas (Dyspnea)' },
+  { kode: '39579001',  nama: 'Syok Anafilaktik (Anaphylaxis)' },
+  { kode: '419076005', nama: 'Reaksi Alergi Ringan (Allergic reaction)' },
+  { kode: '422587007', nama: 'Mual (Nausea)' },
+  { kode: '422400008', nama: 'Muntah (Vomiting)' }
+];
 
 interface Step1Props {
   register: UseFormRegister<ScreeningFormData>;
@@ -22,6 +33,48 @@ export default function Step1Umum({ register, errors, watch, setValue }: Step1Pr
   const handleTitleCaseChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, fieldName: keyof ScreeningFormData) => {
     e.target.value = toTitleCase(e.target.value);
     register(fieldName).onChange(e);
+  };
+
+  const [masterAlergis, setMasterAlergis] = useState<any[]>([]);
+  const [selectedAlergenId, setSelectedAlergenId] = useState('');
+  const [selectedManifestasiKode, setSelectedManifestasiKode] = useState('');
+
+  useEffect(() => {
+    masterService.getAlergi().then(res => {
+      if (Array.isArray(res)) setMasterAlergis(res);
+      else if (res.success) setMasterAlergis(res.data);
+    }).catch(console.error);
+  }, []);
+
+  const alergiArr = watch('alergiArr') || [];
+
+  const handleAddAlergi = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!selectedAlergenId || !selectedManifestasiKode) return;
+
+    const alergen = masterAlergis.find(a => a.id_alergi === selectedAlergenId);
+    const manifestasi = MANIFESTASI_OPTIONS.find(m => m.kode === selectedManifestasiKode);
+
+    if (!alergen || !manifestasi) return;
+
+    const newItem = {
+      alergiId: alergen.id_alergi,
+      nama_alergi: alergen.nama_alergi,
+      manifestasiKode: manifestasi.kode,
+      manifestasiNama: manifestasi.nama,
+      tingkatKeparahan: 'low'
+    };
+
+    setValue('alergiArr', [...alergiArr, newItem], { shouldValidate: true, shouldDirty: true });
+    setSelectedAlergenId('');
+    setSelectedManifestasiKode('');
+  };
+
+  const handleRemoveAlergi = (e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    const arr = [...alergiArr];
+    arr.splice(index, 1);
+    setValue('alergiArr', arr, { shouldValidate: true, shouldDirty: true });
   };
 
   // Watch values for dynamic alerts
@@ -208,10 +261,6 @@ export default function Step1Umum({ register, errors, watch, setValue }: Step1Pr
             <input type="text" {...register('riwayatPenyakitDahulu')} onChange={(e) => handleTitleCaseChange(e, 'riwayatPenyakitDahulu')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Penyakit yang pernah dialami..." />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Alergi</label>
-            <input type="text" {...register('riwayatAlergi')} onChange={(e) => handleTitleCaseChange(e, 'riwayatAlergi')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900 text-red-600 font-medium" placeholder="Kosongkan jika tidak ada" />
-          </div>
-          <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Operasi</label>
             <input type="text" {...register('riwayatOperasi')} onChange={(e) => handleTitleCaseChange(e, 'riwayatOperasi')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Kapan & Jenis operasi..." />
           </div>
@@ -222,6 +271,71 @@ export default function Step1Umum({ register, errors, watch, setValue }: Step1Pr
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Riwayat Transfusi Darah</label>
             <input type="text" {...register('riwayatTransfusi')} onChange={(e) => handleTitleCaseChange(e, 'riwayatTransfusi')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 placeholder-gray-400 text-gray-900" placeholder="Pernah transfusi (Ya/Tidak, Kapan)..." />
+          </div>
+
+          {/* Pencatatan Alergi Standar SATUSEHAT */}
+          <div className="md:col-span-2 mt-4 border-t border-blue-100 pt-6">
+            <h4 className="text-md font-bold text-red-600 mb-4 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              Pencatatan Alergi (Standar SATUSEHAT)
+            </h4>
+            
+            <div className="flex gap-2 items-end mb-4 bg-red-50/50 p-4 border border-red-100">
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-gray-700 mb-1">Zat / Alergen (Wajib)</label>
+                <select 
+                  value={selectedAlergenId} 
+                  onChange={e => setSelectedAlergenId(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-red-200 rounded-none text-sm focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">-- Pilih Alergen --</option>
+                  {masterAlergis.map(m => (
+                    <option key={m.id_alergi} value={m.id_alergi}>{m.nama_alergi} ({m.kategori})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-gray-700 mb-1">Gejala Reaksi (Wajib)</label>
+                <select 
+                  value={selectedManifestasiKode} 
+                  onChange={e => setSelectedManifestasiKode(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-red-200 rounded-none text-sm focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">-- Pilih Reaksi --</option>
+                  {MANIFESTASI_OPTIONS.map(m => (
+                    <option key={m.kode} value={m.kode}>{m.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <button 
+                onClick={handleAddAlergi}
+                disabled={!selectedAlergenId || !selectedManifestasiKode}
+                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-300 text-white font-bold py-2 px-4 rounded-none h-[38px] flex items-center gap-1 text-sm"
+              >
+                <Plus className="w-4 h-4" /> Tambah
+              </button>
+            </div>
+
+            {/* List Alergi Terpilih */}
+            {alergiArr && alergiArr.length > 0 && (
+              <div className="space-y-2">
+                {alergiArr.map((item: any, idx: number) => (
+                  <div key={idx} className="flex justify-between items-center bg-white p-3 border border-red-200 border-l-4 border-l-red-500 shadow-sm">
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">{item.nama_alergi}</p>
+                      <p className="text-xs text-red-600">Reaksi: {item.manifestasiNama} (Keparahan: {item.tingkatKeparahan})</p>
+                    </div>
+                    <button onClick={(e) => handleRemoveAlergi(e, idx)} className="text-gray-400 hover:text-red-600 p-1">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {(!alergiArr || alergiArr.length === 0) && (
+              <p className="text-sm text-gray-500 italic">Belum ada alergi yang ditambahkan untuk kunjungan ini.</p>
+            )}
           </div>
         </div>
       </div>

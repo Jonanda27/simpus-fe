@@ -18,12 +18,12 @@ import TabSubjektif from './components/TabSubjektif';
 import TabObjektif from './components/TabObjektif';
 import TabAsesmen from './components/TabAsesmen';
 import TabPlan from './components/TabPlan';
-import TabDiagnosa from './components/TabDiagnosa';
 import TabLaboratorium from './components/TabLaboratorium';
 import TabTindakan from './components/TabTindakan';
 import TabResep from './components/TabResep';
 import TabRujukan from './components/TabRujukan';
 import ScreeningModal from './components/ScreeningModal';
+import RiwayatRMEModal from './components/RiwayatRMEModal';
 import DischargePlanning from './components/DischargePlanning';
 import { useReactToPrint } from 'react-to-print';
 import { CetakHasilLab } from '@/components/laboratorium/CetakHasilLab';
@@ -35,22 +35,18 @@ export default function DokterRawatJalanPage() {
 
   // Store
   const {
-    antrian, selectedKunjungan, rekamMedis, screeningData, diagnosaList, tindakanList, fase,
+    antrian, selectedKunjungan, rekamMedis, screeningData, diagnosaList, tindakanList, alergiList, fase,
     isLoadingAntrian, isLoadingRekamMedis, isSaving,
-    fetchAntrian, pilihPasien, simpanSOAP, simpanDiagnosa, simpanTindakan, simpanOrderLab, selesaikanPemeriksaan,
+    fetchAntrian, pilihPasien, simpanSOAP, simpanDiagnosa, simpanTindakan, simpanOrderLab, simpanAlergi, selesaikanPemeriksaan, tundaPemeriksaan,
     setFase, simpanResep, simpanRujukan, pulang, clearSelection,
   } = useRawatJalanStore();
 
   // SOAP local form state
   const [soapData, setSoapData] = useState<SOAPPayload>({});
 
-  // ICD-10 State
-  const [icd10Query, setIcd10Query] = useState('');
-  const [icd10Results, setIcd10Results] = useState<any[]>([]);
-  const [isSearchingICD, setIsSearchingICD] = useState(false);
-  const [selectedDiagnoses, setSelectedDiagnoses] = useState<any[]>([]);
-
-  // ICD-9 State
+  // Removed separate ICD10 states since TabAsesmen handles it now
+  
+  // Tindakan (ICD-9) - Tab Tindakan/Prosedur
   const [icd9Query, setIcd9Query] = useState('');
   const [icd9Results, setIcd9Results] = useState<any[]>([]);
   const [isSearchingICD9, setIsSearchingICD9] = useState(false);
@@ -70,6 +66,9 @@ export default function DokterRawatJalanPage() {
 
   // Screening modal
   const [isScreeningModalOpen, setIsScreeningModalOpen] = useState(false);
+  
+  // Riwayat RME modal
+  const [isRiwayatModalOpen, setIsRiwayatModalOpen] = useState(false);
 
   // Lab Modal & Print Ref
   const [isLabModalOpen, setIsLabModalOpen] = useState(false);
@@ -184,6 +183,13 @@ export default function DokterRawatJalanPage() {
         riwayatPenyakitSekarang: rekamMedis.riwayatPenyakitSekarang || '',
         riwayatPenyakitDahulu: rekamMedis.riwayatPenyakitDahulu || '',
         riwayatAlergi: rekamMedis.riwayatAlergi || '',
+        alergiArr: alergiList ? alergiList.map(a => ({
+          alergiId: a.alergiId,
+          nama_alergi: a.alergiMaster?.nama_alergi || a.manifestasiNama,
+          manifestasiKode: a.manifestasiKode,
+          manifestasiNama: a.manifestasiNama,
+          tingkatKeparahan: a.tingkatKeparahan
+        })) : [],
         keadaanUmum: rekamMedis.keadaanUmum || 'Tampak Sakit Ringan',
         kesadaran: rekamMedis.kesadaran || 'Compos Mentis (Sadar Penuh)',
         pemeriksaanFisik: rekamMedis.pemeriksaanFisik || '',
@@ -193,7 +199,7 @@ export default function DokterRawatJalanPage() {
         instruksiMedis: rekamMedis.instruksiMedis || '',
       });
     }
-  }, [rekamMedis]);
+  }, [rekamMedis, alergiList]);
 
   // Sync order lab data when loaded
   useEffect(() => {
@@ -206,17 +212,18 @@ export default function DokterRawatJalanPage() {
     }
   }, [selectedKunjungan]);
 
-  // Sync diagnosa from store when loaded
+  // Sync diagnosa from store when loaded (put it into soapData.diagnosisArr instead of selectedDiagnoses)
   useEffect(() => {
     if (diagnosaList.length > 0) {
-      setSelectedDiagnoses(diagnosaList.map(d => ({
-        id_icd10: d.icd10.id_icd10,
-        kode_icd10: d.icd10.kode_icd10,
-        nama_diagnosis: d.icd10.nama_diagnosis,
-        jenis: d.jenisDiagnosis,
-      })));
-    } else {
-      setSelectedDiagnoses([]);
+      setSoapData(prev => ({
+        ...prev,
+        diagnosisArr: diagnosaList.map(d => ({
+          icd10Id: d.icd10.id_icd10,
+          kode_icd10: d.icd10.kode_icd10,
+          nama_diagnosis: d.icd10.nama_diagnosis,
+          jenisDiagnosis: d.jenisDiagnosis,
+        }))
+      }));
     }
   }, [diagnosaList]);
 
@@ -246,28 +253,53 @@ export default function DokterRawatJalanPage() {
   }, [activeTab]);
 
   // ─── Handlers ───
-  const handleSearchICD10 = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setIcd10Query(query);
-    if (query.length > 2) {
-      setIsSearchingICD(true);
-      try {
-        const res = await icd10Service.search(query);
-        if (res.status === 'success') setIcd10Results(res.data);
-      } catch { /* ignore */ } finally { setIsSearchingICD(false); }
-    } else { setIcd10Results([]); }
-  };
-
-  const handleSelectICD10 = (icd: any) => {
-    if (!selectedDiagnoses.find(d => d.kode_icd10 === icd.kode_icd10)) {
-      setSelectedDiagnoses([...selectedDiagnoses, { ...icd, jenis: selectedDiagnoses.length === 0 ? 'Utama' : 'Sekunder' }]);
+  const handlePilihPasien = (kunjungan: any) => {
+    // 1. Cek apakah ada pasien lain yang sedang DIPERIKSA (kecuali diri sendiri)
+    const isExaminingOther = selectedKunjungan && selectedKunjungan.id !== kunjungan.id;
+    
+    if (isExaminingOther) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Beralih Pasien?',
+        text: `Anda sedang memeriksa ${selectedKunjungan.pasien.namaLengkap}. Simpan sebagai draf dan alihkan ke ${kunjungan.pasien.namaLengkap}?`,
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Alihkan',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#f59e0b'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            await tundaPemeriksaan(soapData);
+            pilihPasien(kunjungan);
+          } catch {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menunda pemeriksaan pasien sebelumnya.' });
+          }
+        }
+      });
+      return;
     }
-    setIcd10Query('');
-    setIcd10Results([]);
-  };
 
-  const handleRemoveDiagnosis = (kode: string) => {
-    setSelectedDiagnoses(selectedDiagnoses.filter(d => d.kode_icd10 !== kode));
+    // 2. Jika pasien baru (MENUNGGU_DOKTER), minta konfirmasi
+    if (kunjungan.statusKunjungan === 'MENUNGGU_DOKTER' || kunjungan.statusKunjungan === 'MENUNGGU') {
+      Swal.fire({
+        title: 'Mulai Pemeriksaan?',
+        text: `Anda akan memulai pemeriksaan untuk ${kunjungan.pasien.namaLengkap}.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#d1d5db',
+        confirmButtonText: 'Ya, Mulai',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          pilihPasien(kunjungan);
+        }
+      });
+      return;
+    }
+
+    // 3. Bypass untuk pasien yang sudah pernah DIPERIKSA, MENUNGGU_LAB, dll
+    pilihPasien(kunjungan);
   };
 
   const handleSearchICD9 = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -304,12 +336,16 @@ export default function DokterRawatJalanPage() {
   };
 
   const handleSaveDiagnosa = async () => {
+    if (!soapData.diagnosisArr || soapData.diagnosisArr.length === 0) {
+      Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Pilih minimal satu diagnosa ICD-10.' });
+      return;
+    }
     try {
-      const payload = selectedDiagnoses.map(d => ({
-        icd10Id: d.id_icd10,
+      const payload = soapData.diagnosisArr.map(d => ({
+        icd10Id: d.icd10Id,
         kode_icd10: d.kode_icd10,
         nama_diagnosis: d.nama_diagnosis,
-        jenisDiagnosis: d.jenis,
+        jenisDiagnosis: d.jenisDiagnosis,
       }));
       await simpanDiagnosa(payload);
       Swal.fire({ icon: 'success', title: 'Diagnosa Disimpan!', timer: 1200, showConfirmButton: false });
@@ -333,13 +369,19 @@ export default function DokterRawatJalanPage() {
     try {
       // Save SOAP terlebih dahulu
       await simpanSOAP(soapData);
+      
+      // Save alergi jika ada
+      if (soapData.alergiArr) {
+        await simpanAlergi(soapData.alergiArr);
+      }
+
       // Save diagnosa jika ada
-      if (selectedDiagnoses.length > 0) {
-        const payload = selectedDiagnoses.map(d => ({
-          icd10Id: d.id_icd10,
+      if (soapData.diagnosisArr && soapData.diagnosisArr.length > 0) {
+        const payload = soapData.diagnosisArr.map(d => ({
+          icd10Id: d.icd10Id,
           kode_icd10: d.kode_icd10,
           nama_diagnosis: d.nama_diagnosis,
-          jenisDiagnosis: d.jenis,
+          jenisDiagnosis: d.jenisDiagnosis,
         }));
         await simpanDiagnosa(payload);
       }
@@ -361,6 +403,27 @@ export default function DokterRawatJalanPage() {
     }
   };
 
+  const handleTundaPemeriksaan = async () => {
+    Swal.fire({
+      title: 'Tunda Pemeriksaan?',
+      text: 'Rekam medis akan disimpan sebagai draf dan pasien akan dikembalikan ke antrean.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Tunda',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#f59e0b',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await tundaPemeriksaan(soapData);
+          Swal.fire({ icon: 'success', title: 'Ditunda', text: 'Pemeriksaan berhasil ditunda.', timer: 1500, showConfirmButton: false });
+        } catch {
+          Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menunda pemeriksaan.' });
+        }
+      }
+    });
+  };
+
   // Hitung usia
   const getAge = (dob: string) => {
     const birth = new Date(dob);
@@ -370,13 +433,12 @@ export default function DokterRawatJalanPage() {
 
   // ─── Tabs ───
   const tabs = [
-    { id: 'SOAP_S', label: 'S (Subjektif)', icon: <FileText className="w-4 h-4 mr-2" /> },
-    { id: 'SOAP_O', label: 'O (Objektif)', icon: <FileText className="w-4 h-4 mr-2" /> },
-    { id: 'SOAP_A', label: 'A (Asesmen)', icon: <FileText className="w-4 h-4 mr-2" /> },
-    { id: 'SOAP_P', label: 'P (Plan)', icon: <FileText className="w-4 h-4 mr-2" /> },
-    { id: 'DIAGNOSA', label: 'Diagnosa', icon: <Activity className="w-4 h-4 mr-2" /> },
-    { id: 'LABORATORIUM', label: 'Order Lab', icon: <TestTubes className="w-4 h-4 mr-2" /> },
-    { id: 'TINDAKAN', label: 'Tindakan', icon: <Syringe className="w-4 h-4 mr-2" /> },
+    { id: 'SOAP_S', label: 'S (Subjektif)', icon: <User className="w-4 h-4 mr-2" /> },
+    { id: 'SOAP_O', label: 'O (Objektif)', icon: <Stethoscope className="w-4 h-4 mr-2" /> },
+    { id: 'SOAP_A', label: 'A (Asesmen & Diagnosa)', icon: <FileText className="w-4 h-4 mr-2" /> },
+    { id: 'SOAP_P', label: 'P (Plan)', icon: <ClipboardList className="w-4 h-4 mr-2" /> },
+    { id: 'LABORATORIUM', label: 'Laboratorium', icon: <TestTubes className="w-4 h-4 mr-2" /> },
+    { id: 'TINDAKAN', label: 'Tindakan Medis', icon: <Activity className="w-4 h-4 mr-2" /> },
   ];
 
   return (
@@ -390,7 +452,7 @@ export default function DokterRawatJalanPage() {
         fetchAntrian={fetchAntrian} 
         isLoadingAntrian={isLoadingAntrian} 
         selectedKunjungan={selectedKunjungan} 
-        pilihPasien={pilihPasien} 
+        pilihPasien={handlePilihPasien} 
         getAge={getAge} 
       />
 
@@ -403,6 +465,7 @@ export default function DokterRawatJalanPage() {
               selectedKunjungan={selectedKunjungan} 
               getAge={getAge} 
               setIsScreeningModalOpen={setIsScreeningModalOpen} 
+              setIsRiwayatModalOpen={setIsRiwayatModalOpen}
             />
 
             {/* Loading Overlay */}
@@ -487,20 +550,7 @@ export default function DokterRawatJalanPage() {
                       <TabPlan soapData={soapData} setSoapData={setSoapData} setActiveTab={setActiveTab} />
                     )}
 
-                    {/* TAB: Diagnosa ICD-10 */}
-                    {activeTab === 'DIAGNOSA' && (
-                      <TabDiagnosa 
-                        isSearchingICD={isSearchingICD} 
-                        icd10Query={icd10Query} 
-                        handleSearchICD10={handleSearchICD10} 
-                        icd10Results={icd10Results} 
-                        handleSelectICD10={handleSelectICD10} 
-                        selectedDiagnoses={selectedDiagnoses} 
-                        setSelectedDiagnoses={setSelectedDiagnoses} 
-                        handleRemoveDiagnosis={handleRemoveDiagnosis} 
-                        setActiveTab={setActiveTab} 
-                      />
-                    )}
+                    {/* Removed TabDiagnosa Component from here since it's merged into TabAsesmen */}
 
                     {/* TAB: Order Laboratorium */}
                     {activeTab === 'LABORATORIUM' && (
@@ -556,10 +606,16 @@ export default function DokterRawatJalanPage() {
 
                 {/* Bottom Footer Actions */}
                 <div className="bg-white p-4 border-t border-gray-200 flex justify-between shadow-lg z-20 relative">
-                  <button onClick={handleSaveSOAP} disabled={isSaving || selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'} className="px-6 py-2.5 border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70">
-                    {isSaving ? 'Menyimpan...' : 'Simpan Draft'}
-                  </button>
-                  <button onClick={handleSelesaikan} disabled={isSaving || selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'} className="px-8 py-2.5 bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors flex items-center text-sm rounded-none shadow-sm disabled:opacity-70">
+                  <div className="flex gap-2">
+                    <button onClick={handleTundaPemeriksaan} disabled={isSaving} className="px-6 py-2.5 bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70 flex items-center">
+                      <Clock className="w-4 h-4 mr-2" />
+                      Tunda Pemeriksaan
+                    </button>
+                    <button onClick={handleSaveSOAP} disabled={isSaving || selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'} className="px-6 py-2.5 border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70">
+                      Simpan Draf (SOAP)
+                    </button>
+                  </div>
+                  <button onClick={handleSelesaikan} disabled={isSaving || selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'} className="px-8 py-2.5 bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70 flex items-center">
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Selesaikan Pemeriksaan
                   </button>
@@ -580,6 +636,13 @@ export default function DokterRawatJalanPage() {
         isScreeningModalOpen={isScreeningModalOpen} 
         setIsScreeningModalOpen={setIsScreeningModalOpen} 
         screeningData={screeningData} 
+      />
+
+      {/* RIWAYAT RME MODAL */}
+      <RiwayatRMEModal
+        isOpen={isRiwayatModalOpen}
+        onClose={() => setIsRiwayatModalOpen(false)}
+        noRM={selectedKunjungan?.pasien?.noRM || ''}
       />
 
       {/* LAB RESULT MODAL */}

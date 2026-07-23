@@ -229,7 +229,7 @@ export default function KasirPage() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100 text-sm">
-                        {tagihanAktif.details.map((item, idx) => (
+                        {(tagihanAktif.details || []).map((item, idx) => (
                           <tr key={idx} className="hover:bg-gray-50">
                             <td className="px-6 py-4">
                               <div className="font-semibold text-gray-800">{item.namaItem}</div>

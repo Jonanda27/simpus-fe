@@ -8,6 +8,10 @@ export interface Dokter {
   role: string;
   poliklinikId: string | null;
   poliklinik?: Poliklinik | null;
+  tenagaMedis?: {
+    nik: string;
+    noIHS: string | null;
+  } | null;
   createdAt: string;
 }
 
@@ -16,6 +20,7 @@ export interface DokterPayload {
   username: string;
   password?: string;
   poliklinikId?: string;
+  nik?: string;
 }
 
 export const dokterService = {

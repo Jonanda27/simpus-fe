@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Dokter, DokterPayload, dokterService } from '../services/dokter.service';
+import { satusehatService } from '../services/satusehat.service';
 
 interface DokterState {
   dokters: Dokter[];
@@ -10,6 +11,8 @@ interface DokterState {
   createDokter: (data: DokterPayload) => Promise<void>;
   updateDokter: (id: string, data: Partial<DokterPayload>) => Promise<void>;
   deleteDokter: (id: string) => Promise<void>;
+  syncDokterIHS: (nik: string, userId: string) => Promise<any>;
+  checkIHSNik: (nik: string) => Promise<any>;
 }
 
 export const useDokterStore = create<DokterState>((set, get) => ({
@@ -56,6 +59,39 @@ export const useDokterStore = create<DokterState>((set, get) => ({
       await get().fetchDokters();
     } catch (error: any) {
       set({ error: error.message || 'Gagal menghapus dokter', isLoading: false });
+      throw error;
+    }
+  },
+
+  syncDokterIHS: async (nik: string, userId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await satusehatService.syncPractitionerIHS(nik, userId);
+      if (response.success) {
+        await get().fetchDokters();
+        return response;
+      }
+      return response;
+    } catch (error: any) {
+      set({ 
+        error: error.message || 'Gagal sinkronisasi IHS Dokter', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  checkIHSNik: async (nik: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await satusehatService.checkPractitionerNIK(nik);
+      set({ isLoading: false });
+      return response;
+    } catch (error: any) {
+      set({ 
+        error: error.message || 'Gagal mengecek NIK ke SATUSEHAT', 
+        isLoading: false 
+      });
       throw error;
     }
   }

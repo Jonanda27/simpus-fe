@@ -9,51 +9,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// ─────────────────────────────────────────────
-// DUMMY DATA
-// ─────────────────────────────────────────────
-const dummyStats = {
-  totalHariIni: 47,
-  totalBulanIni: 1243,
-  menunggu: 12,
-  sedangDilayani: 5,
-  selesai: 30,
-  bpjs: 31,
-  umum: 11,
-  asuransi: 5,
-  prioritas: { lansia: 8, disabilitas: 2, hamilMenyusui: 3 },
-};
-
-const dummyAntrian = [
-  { id: 1, noAntrian: 'A-001', noRm: 'RM-2024-0091', nama: 'Budi Santoso', jk: 'L', usia: 45, poli: 'Poli Umum', jenisKunjungan: 'Pasien Lama', jenisBayar: 'BPJS', status: 'Menunggu', waktu: '08:05', prioritas: 'Umum' },
-  { id: 2, noAntrian: 'A-002', noRm: 'RM-2024-0154', nama: 'Siti Aminah', jk: 'P', usia: 65, poli: 'Poli KIA / KB', jenisKunjungan: 'Pasien Lama', jenisBayar: 'BPJS', status: 'Menunggu', waktu: '08:12', prioritas: 'Lansia' },
-  { id: 3, noAntrian: 'B-001', noRm: '-', nama: 'Ahmad Dahlan', jk: 'L', usia: 28, poli: 'Poli Gigi', jenisKunjungan: 'Pasien Baru', jenisBayar: 'Umum', status: 'Dilayani', waktu: '08:20', prioritas: 'Umum' },
-  { id: 4, noAntrian: 'A-003', noRm: 'RM-2023-0501', nama: 'Dewi Rahayu', jk: 'P', usia: 32, poli: 'Poli Umum', jenisKunjungan: 'Pasien Lama', jenisBayar: 'Asuransi', status: 'Menunggu', waktu: '08:31', prioritas: 'Hamil' },
-  { id: 5, noAntrian: 'A-004', noRm: 'RM-2022-0211', nama: 'Hendra Wijaya', jk: 'L', usia: 52, poli: 'Poli Lansia', jenisKunjungan: 'Pasien Lama', jenisBayar: 'BPJS', status: 'Menunggu', waktu: '08:40', prioritas: 'Umum' },
-  { id: 6, noAntrian: 'C-001', noRm: '-', nama: 'Ratna Sari', jk: 'P', usia: 24, poli: 'Poli Imunisasi', jenisKunjungan: 'Pasien Baru', jenisBayar: 'Umum', status: 'Selesai', waktu: '07:55', prioritas: 'Umum' },
-  { id: 7, noAntrian: 'B-002', noRm: 'RM-2024-0003', nama: 'Agus Purnomo', jk: 'L', usia: 71, poli: 'Poli Gigi', jenisKunjungan: 'Pasien Lama', jenisBayar: 'BPJS', status: 'Selesai', waktu: '07:48', prioritas: 'Lansia' },
-];
-
-const dummyGrafik = [
-  { hari: 'Sen', jumlah: 38, bpjs: 25 },
-  { hari: 'Sel', jumlah: 52, bpjs: 34 },
-  { hari: 'Rab', jumlah: 45, bpjs: 29 },
-  { hari: 'Kam', jumlah: 61, bpjs: 40 },
-  { hari: 'Jum', jumlah: 49, bpjs: 31 },
-  { hari: 'Sab', jumlah: 33, bpjs: 20 },
-  { hari: 'Ini', jumlah: 47, bpjs: 31 },
-];
-
-const maxGrafik = Math.max(...dummyGrafik.map(g => g.jumlah));
-
-const dummyPoli = [
-  { nama: 'Poli Umum', jumlah: 18, dokter: 'dr. Ahmad Fauzi', status: 'Buka' },
-  { nama: 'Poli KIA / KB', jumlah: 9, dokter: 'dr. Sari Dewi', status: 'Buka' },
-  { nama: 'Poli Gigi', jumlah: 7, dokter: 'drg. Hendra K.', status: 'Buka' },
-  { nama: 'Poli Lansia', jumlah: 6, dokter: 'dr. Budi S.', status: 'Buka' },
-  { nama: 'Poli Imunisasi', jumlah: 4, dokter: 'Ns. Ratna', status: 'Buka' },
-  { nama: 'Poli Gizi', jumlah: 3, dokter: 'Ns. Eka R.', status: 'Tutup' },
-];
+import { kunjunganService } from '@/services/kunjungan.service';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -94,6 +52,34 @@ export default function AdminDashboardPage() {
   const [isClient, setIsClient] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalHariIni: 0,
+    totalBulanIni: 0,
+    menunggu: 0,
+    sedangDilayani: 0,
+    selesai: 0,
+    pembayaranList: [] as { label: string, value: number }[],
+    prioritas: { lansia: 0, disabilitas: 0, hamilMenyusui: 0 }
+  });
+  const [antrean, setAntrean] = useState<any[]>([]);
+  const [grafik, setGrafik] = useState<any[]>([]);
+  const [poli, setPoli] = useState<any[]>([]);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const data = await kunjunganService.getDashboardStats();
+      setStats(data.stats);
+      setAntrean(data.antrean);
+      setGrafik(data.grafik);
+      setPoli(data.poli);
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     setIsClient(true);
     const tick = () => setCurrentTime(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -102,16 +88,42 @@ export default function AdminDashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const filtered = dummyAntrian.filter(p => {
-    const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) || p.noAntrian.toLowerCase().includes(search.toLowerCase()) || p.noRm.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === 'Semua' || p.status === filterStatus;
+  useEffect(() => {
+    fetchDashboardStats();
+    // Auto-refresh every 30 seconds
+    const refreshInterval = setInterval(fetchDashboardStats, 30000);
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  const getAge = (dob: string) => {
+    if (!dob) return 0;
+    const diff = new Date().getTime() - new Date(dob).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  };
+
+  const mapStatus = (st: string) => {
+    if (st === 'MENUNGGU' || st === 'MENUNGGU_DOKTER') return 'Menunggu';
+    if (st === 'DIPROSES_SCREENING' || st === 'DIPERIKSA') return 'Dilayani';
+    return 'Selesai';
+  };
+
+  const filtered = antrean.filter(p => {
+    const nama = p.pasien?.namaLengkap || '';
+    const noAntrian = p.noAntrian || '';
+    const noRm = p.pasien?.noRM || '';
+    const matchSearch = nama.toLowerCase().includes(search.toLowerCase()) || 
+                        noAntrian.toLowerCase().includes(search.toLowerCase()) || 
+                        noRm.toLowerCase().includes(search.toLowerCase());
+    
+    const mappedSt = mapStatus(p.statusKunjungan);
+    const matchStatus = filterStatus === 'Semua' || mappedSt === filterStatus;
+    
     return matchSearch && matchStatus;
   });
 
   if (!isClient) return null;
 
-  const persenBpjs = Math.round((dummyStats.bpjs / dummyStats.totalHariIni) * 100);
-  const persenUmum = Math.round((dummyStats.umum / dummyStats.totalHariIni) * 100);
+  const maxGrafik = Math.max(...grafik.map(g => g.jumlah), 1); // Avoid division by zero
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -159,11 +171,10 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Card 1 */}
           <div className="bg-white border border-gray-200 p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-            <div className="absolute -top-4 -right-4 w-20 h-20 bg-blue-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Kunjungan</p>
-                <p className="text-3xl font-extrabold text-gray-900 mt-2">{dummyStats.totalHariIni}</p>
+                <p className="text-3xl font-extrabold text-gray-900 mt-2">{stats.totalHariIni}</p>
                 <p className="text-xs text-gray-500 mt-1">Hari ini</p>
               </div>
               <div className="p-2.5 bg-blue-100 text-blue-600">
@@ -178,12 +189,11 @@ export default function AdminDashboardPage() {
 
           {/* Card 2 */}
           <div className="bg-white border border-gray-200 p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-            <div className="absolute -top-4 -right-4 w-20 h-20 bg-amber-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Antrian Aktif</p>
-                <p className="text-3xl font-extrabold text-gray-900 mt-2">{dummyStats.menunggu}</p>
-                <p className="text-xs text-gray-500 mt-1">Sedang menunggu loket</p>
+                <p className="text-3xl font-extrabold text-gray-900 mt-2">{stats.menunggu}</p>
+                <p className="text-xs text-gray-500 mt-1">Menunggu panggilan poli</p>
               </div>
               <div className="p-2.5 bg-amber-100 text-amber-600">
                 <Clock className="w-6 h-6" />
@@ -191,17 +201,16 @@ export default function AdminDashboardPage() {
             </div>
             <div className="mt-4 flex items-center gap-1 text-xs text-amber-600 font-semibold">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block" />
-              <span>{dummyStats.sedangDilayani} pasien sedang dilayani</span>
+              <span>{stats.sedangDilayani} pasien sedang dilayani</span>
             </div>
           </div>
 
           {/* Card 3 */}
           <div className="bg-white border border-gray-200 p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-            <div className="absolute -top-4 -right-4 w-20 h-20 bg-emerald-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Selesai Hari Ini</p>
-                <p className="text-3xl font-extrabold text-gray-900 mt-2">{dummyStats.selesai}</p>
+                <p className="text-3xl font-extrabold text-gray-900 mt-2">{stats.selesai}</p>
                 <p className="text-xs text-gray-500 mt-1">Sudah dilayani</p>
               </div>
               <div className="p-2.5 bg-emerald-100 text-emerald-600">
@@ -210,17 +219,16 @@ export default function AdminDashboardPage() {
             </div>
             <div className="mt-4 flex items-center gap-1 text-xs text-emerald-600 font-semibold">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{Math.round((dummyStats.selesai / dummyStats.totalHariIni) * 100)}% dari total kunjungan</span>
+              <span>{Math.round((stats.selesai / (stats.totalHariIni || 1)) * 100)}% dari total kunjungan</span>
             </div>
           </div>
 
           {/* Card 4 */}
           <div className="bg-white border border-gray-200 p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
-            <div className="absolute -top-4 -right-4 w-20 h-20 bg-purple-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Prioritas Khusus</p>
-                <p className="text-3xl font-extrabold text-gray-900 mt-2">{dummyStats.prioritas.lansia + dummyStats.prioritas.disabilitas + dummyStats.prioritas.hamilMenyusui}</p>
+                <p className="text-3xl font-extrabold text-gray-900 mt-2">{stats.prioritas.lansia + stats.prioritas.disabilitas + stats.prioritas.hamilMenyusui}</p>
                 <p className="text-xs text-gray-500 mt-1">Lansia, Hamil, Disabilitas</p>
               </div>
               <div className="p-2.5 bg-purple-100 text-purple-600">
@@ -228,8 +236,9 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-1">
-              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 font-medium">Lansia: {dummyStats.prioritas.lansia}</span>
-              <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 font-medium">Hamil: {dummyStats.prioritas.hamilMenyusui}</span>
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 font-medium">Lansia: {stats.prioritas.lansia}</span>
+              <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 font-medium">Hamil: {stats.prioritas.hamilMenyusui}</span>
+              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 font-medium">Disabilitas: {stats.prioritas.disabilitas}</span>
             </div>
           </div>
         </div>
@@ -248,38 +257,33 @@ export default function AdminDashboardPage() {
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 bg-blue-500 inline-block" />Total Kunjungan
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 bg-emerald-400 inline-block" />Pasien BPJS
-                </span>
               </div>
             </div>
 
             {/* Chart Bars */}
             <div className="flex items-end gap-3 flex-1" style={{ minHeight: '120px' }}>
-              {dummyGrafik.map((d, i) => {
-                const isToday = i === dummyGrafik.length - 1;
-                const barH = Math.round((d.jumlah / maxGrafik) * 120);
-                const bpjsH = Math.round((d.bpjs / maxGrafik) * 120);
+              {grafik.map((item, idx) => {
+                const isToday = idx === grafik.length - 1;
+                const barH = Math.round((item.jumlah / maxGrafik) * 120);
+                const bpjsH = Math.round((item.bpjs / maxGrafik) * 120);
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-0">
-                    {/* Total value label */}
-                    <span className={`text-xs font-bold mb-1 ${isToday ? 'text-blue-700' : 'text-gray-600'}`}>
-                      {d.jumlah}
+                  <div key={idx} className="flex-1 flex flex-col items-center gap-0">
+                    <span className={`text-xs font-bold mb-2 ${isToday ? 'text-blue-700' : 'text-gray-600'}`}>
+                      {item.jumlah}
                     </span>
-                    {/* Two bars side by side */}
-                    <div className="w-full flex gap-0.5 items-end" style={{ height: '110px' }}>
+                    <div className="w-full flex justify-center items-end" style={{ height: '110px' }}>
                       <div
-                        className={`flex-1 ${isToday ? 'bg-blue-600' : 'bg-blue-300 hover:bg-blue-400'} transition-colors`}
+                        className={`w-5 sm:w-8 flex flex-col justify-end overflow-hidden rounded-t-sm ${isToday ? 'bg-blue-600' : 'bg-blue-300 hover:bg-blue-400'} transition-colors relative group/bar`}
                         style={{ height: `${barH}px` }}
-                      />
-                      <div
-                        className={`flex-1 ${isToday ? 'bg-emerald-500' : 'bg-emerald-300 hover:bg-emerald-400'} transition-colors`}
-                        style={{ height: `${bpjsH}px` }}
-                      />
+                      >
+                        {/* Tooltip on hover */}
+                        <div className="absolute opacity-0 group-hover/bar:opacity-100 bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10 pointer-events-none transition-opacity">
+                          Total: {item.jumlah}
+                        </div>
+                      </div>
                     </div>
-                    {/* Day label */}
                     <span className={`text-xs font-semibold mt-1 ${isToday ? 'text-blue-700' : 'text-gray-500'}`}>
-                      {d.hari}
+                      {item.hari}
                     </span>
                   </div>
                 );
@@ -289,11 +293,11 @@ export default function AdminDashboardPage() {
             {/* Bottom Stats */}
             <div className="mt-5 pt-4 border-t border-gray-100 grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-lg font-extrabold text-gray-900">{dummyStats.totalBulanIni.toLocaleString('id-ID')}</p>
+                <p className="text-lg font-extrabold text-gray-900">{stats.totalBulanIni.toLocaleString('id-ID')}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Total Bulan Ini</p>
               </div>
               <div>
-                <p className="text-lg font-extrabold text-gray-900">{Math.round(dummyStats.totalBulanIni / 26)}</p>
+                <p className="text-lg font-extrabold text-gray-900">{Math.round(stats.totalBulanIni / 26)}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Rata-rata / Hari</p>
               </div>
               <div>
@@ -309,42 +313,28 @@ export default function AdminDashboardPage() {
               <h2 className="text-base font-bold text-gray-900 mb-1">Jenis Pembayaran</h2>
               <p className="text-xs text-gray-500 mb-5">Komposisi pasien hari ini</p>
 
-              {[
-                { label: 'BPJS Kesehatan', value: dummyStats.bpjs, total: dummyStats.totalHariIni, color: 'bg-green-500' },
-                { label: 'Umum / Mandiri', value: dummyStats.umum, total: dummyStats.totalHariIni, color: 'bg-blue-500' },
-                { label: 'Asuransi Swasta', value: dummyStats.asuransi, total: dummyStats.totalHariIni, color: 'bg-violet-500' },
-              ].map((item) => {
-                const persen = Math.round((item.value / item.total) * 100);
-                return (
-                  <div key={item.label} className="mb-4">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                      <span className="text-sm font-bold text-gray-900">{item.value} <span className="text-gray-400 font-normal text-xs">({persen}%)</span></span>
+              {stats.pembayaranList.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">Belum ada data pembayaran</p>
+              ) : (
+                stats.pembayaranList.map((item, idx) => {
+                  const totalPembayaran = stats.pembayaranList.reduce((acc, curr) => acc + curr.value, 0);
+                  const persen = totalPembayaran === 0 ? 0 : Math.round((item.value / totalPembayaran) * 100);
+                  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-teal-500'];
+                  const color = colors[idx % colors.length];
+                  
+                  return (
+                    <div key={item.label} className="mb-4">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                        <span className="text-sm font-bold text-gray-900">{item.value} <span className="text-gray-400 font-normal text-xs">({persen}%)</span></span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2.5">
+                        <div className={`h-2.5 ${color} transition-all duration-700`} style={{ width: `${persen}%` }} />
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-100 h-2.5">
-                      <div className={`h-2.5 ${item.color} transition-all duration-700`} style={{ width: `${persen}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Prioritas Khusus</h3>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-purple-50 border border-purple-100 p-2">
-                  <p className="text-xl font-extrabold text-purple-700">{dummyStats.prioritas.lansia}</p>
-                  <p className="text-xs text-purple-600 font-medium mt-0.5">Lansia</p>
-                </div>
-                <div className="bg-pink-50 border border-pink-100 p-2">
-                  <p className="text-xl font-extrabold text-pink-700">{dummyStats.prioritas.hamilMenyusui}</p>
-                  <p className="text-xs text-pink-600 font-medium mt-0.5">Hamil</p>
-                </div>
-                <div className="bg-orange-50 border border-orange-100 p-2">
-                  <p className="text-xl font-extrabold text-orange-700">{dummyStats.prioritas.disabilitas}</p>
-                  <p className="text-xs text-orange-600 font-medium mt-0.5">Disabilitas</p>
-                </div>
-              </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -356,15 +346,15 @@ export default function AdminDashboardPage() {
           <div className="bg-white border border-gray-200 shadow-sm p-6">
             <h2 className="text-base font-bold text-gray-900 mb-4">Status Poli</h2>
             <div className="space-y-2.5">
-              {dummyPoli.map((poli) => (
-                <div key={poli.nama} className={`flex items-center justify-between p-3 border ${poli.status === 'Buka' ? 'border-gray-200 bg-white hover:bg-blue-50/50' : 'border-gray-100 bg-gray-50'} transition-colors`}>
+              {poli.map((p, idx) => (
+                <div key={idx} className={`flex items-center justify-between p-3 border ${p.status === 'Buka' ? 'border-gray-200 bg-white hover:bg-blue-50/50' : 'border-gray-100 bg-gray-50'} transition-colors`}>
                   <div>
-                    <p className={`text-sm font-semibold ${poli.status === 'Tutup' ? 'text-gray-400' : 'text-gray-800'}`}>{poli.nama}</p>
-                    <p className={`text-xs mt-0.5 ${poli.status === 'Tutup' ? 'text-gray-400' : 'text-gray-500'}`}>{poli.dokter}</p>
+                    <p className={`text-sm font-semibold ${p.status === 'Tutup' ? 'text-gray-400' : 'text-gray-800'}`}>{p.nama}</p>
+                    <p className={`text-xs mt-0.5 ${p.status === 'Tutup' ? 'text-gray-400' : 'text-gray-500'}`}>{p.dokter}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className={`text-xs font-bold px-2 py-0.5 ${poli.status === 'Buka' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>{poli.status}</span>
-                    {poli.status === 'Buka' && <span className="text-xs text-blue-600 font-bold">{poli.jumlah} pasien</span>}
+                    <span className={`text-xs font-bold px-2 py-0.5 ${p.status === 'Buka' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>{p.status}</span>
+                    {p.status === 'Buka' && <span className="text-xs text-blue-600 font-bold">{p.jumlah} pasien</span>}
                   </div>
                 </div>
               ))}
@@ -416,41 +406,40 @@ export default function AdminDashboardPage() {
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col gap-1">
                           <span className="font-bold text-gray-800 text-sm">{p.noAntrian}</span>
-                          <span className="text-xs text-gray-400">{p.waktu} WIB</span>
+                          <span className="text-xs text-gray-400">{new Date(p.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="font-semibold text-gray-900 flex items-center gap-1.5">
-                          {p.nama}
+                          {p.pasien?.namaLengkap}
                           {p.prioritas !== 'Umum' && (
                             <span className={`text-xs px-1.5 py-0.5 font-bold ${getPrioritasBadge(p.prioritas)}`}>{p.prioritas}</span>
                           )}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
-                          <span>{p.usia} th, {p.jk === 'L' ? 'Laki-laki' : 'Perempuan'}</span>
-                          <span className={`px-1.5 py-0.5 text-xs font-medium ${p.jenisKunjungan === 'Pasien Baru' ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-600'}`}>
-                            {p.jenisKunjungan}
+                          <span>{getAge(p.pasien?.tanggalLahir)} th, {p.pasien?.jenisKelamin === 'Laki-Laki' ? 'L' : 'P'}</span>
+                          <span className={`px-1.5 py-0.5 text-xs font-medium ${p.statusPasien === 'Baru' ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-600'}`}>
+                            {p.statusPasien}
                           </span>
                         </div>
-                        <div className="text-xs text-gray-400">{p.noRm !== '-' ? p.noRm : 'Pasien Baru'}</div>
+                        <div className="text-xs text-gray-400">{p.pasien?.noRM || 'Pasien Baru'}</div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-gray-700 font-medium text-sm">{p.poli}</span>
+                        <span className="text-gray-700 font-medium text-sm">{p.poliklinik?.namaPoli || '-'}</span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`text-xs px-2.5 py-1 font-bold ${getBayarStyle(p.jenisBayar)}`}>{p.jenisBayar}</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getBayarStyle(p.pasien?.penjamin?.jenisPenjamin || 'Umum')}`}>
+                          {p.pasien?.penjamin?.jenisPenjamin || 'Umum'}
+                        </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`text-xs px-2.5 py-1 font-semibold flex items-center gap-1.5 w-fit ${getStatusStyle(p.status)}`}>
-                          {p.status === 'Dilayani' && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse inline-block" />}
-                          {p.status === 'Menunggu' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />}
-                          {p.status === 'Selesai' && <CheckCircle2 className="w-3 h-3" />}
-                          {p.status}
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${getStatusStyle(mapStatus(p.statusKunjungan))}`}>
+                          {mapStatus(p.statusKunjungan)}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {p.status === 'Menunggu' && (
+                          {mapStatus(p.statusKunjungan) === 'Menunggu' && (
                             <>
                               <button className="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors" title="Panggil Pasien">
                                 <Volume2 className="w-4 h-4" />
@@ -461,7 +450,7 @@ export default function AdminDashboardPage() {
                               </Link>
                             </>
                           )}
-                          {p.status === 'Selesai' && (
+                          {mapStatus(p.statusKunjungan) === 'Selesai' && (
                             <button className="p-2 text-gray-500 hover:bg-gray-100 transition-colors" title="Cetak Bukti">
                               <Printer className="w-4 h-4" />
                             </button>
@@ -487,8 +476,8 @@ export default function AdminDashboardPage() {
 
             {/* Footer Table */}
             <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-              <span>Menampilkan <strong className="text-gray-700">{filtered.length}</strong> dari <strong className="text-gray-700">{dummyAntrian.length}</strong> antrian</span>
-              <button className="flex items-center gap-1.5 text-blue-600 font-semibold hover:text-blue-700">
+              <span>Menampilkan <strong className="text-gray-700">{filtered.length}</strong> dari <strong className="text-gray-700">{antrean.length}</strong> antrean</span>
+              <button onClick={fetchDashboardStats} className="flex items-center gap-1.5 text-blue-600 font-semibold hover:text-blue-700">
                 <RefreshCw className="w-3.5 h-3.5" />Refresh Data
               </button>
             </div>

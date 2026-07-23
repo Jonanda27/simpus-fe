@@ -62,6 +62,12 @@ export const rawatJalanService = {
     return response.data;
   },
 
+  /** POST /rawat-jalan/:kunjunganId/alergi — Simpan alergi bulk */
+  simpanAlergi: async (kunjunganId: string, alergiArr: any[]): Promise<ApiResponse<any>> => {
+    const response = await api.post(`/rawat-jalan/${kunjunganId}/alergi`, { alergiArr });
+    return response.data;
+  },
+
   /** GET /rawat-jalan/:kunjunganId/tindakan — Get tindakan */
   getTindakan: async (kunjunganId: string): Promise<ApiResponse<TindakanPasien[]>> => {
     const response = await api.get(`/rawat-jalan/${kunjunganId}/tindakan`);
@@ -74,9 +80,21 @@ export const rawatJalanService = {
     return response.data;
   },
 
+  /** GET /rawat-jalan/:kunjunganId/alergi — Get alergi */
+  getAlergi: async (kunjunganId: string): Promise<ApiResponse<any[]>> => {
+    const response = await api.get(`/rawat-jalan/${kunjunganId}/alergi`);
+    return response.data;
+  },
+
   /** Selesaikan Pemeriksaan (Fase 1) */
   selesaikanPemeriksaan: async (kunjunganId: string): Promise<ApiResponse<any>> => {
     const response = await api.post(`/rawat-jalan/${kunjunganId}/selesai`);
+    return response.data;
+  },
+
+  /** Tunda Pemeriksaan (Kedaruratan) */
+  tundaPemeriksaan: async (kunjunganId: string): Promise<ApiResponse<any>> => {
+    const response = await api.post(`/rawat-jalan/${kunjunganId}/tunda`);
     return response.data;
   },
 

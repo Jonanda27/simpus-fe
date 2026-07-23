@@ -1,16 +1,18 @@
 import React from 'react';
-import { User } from 'lucide-react';
+import { User, Clock } from 'lucide-react';
 
 interface PatientHeaderProps {
   selectedKunjungan: any;
   getAge: (dob: string) => number;
   setIsScreeningModalOpen: (isOpen: boolean) => void;
+  setIsRiwayatModalOpen: (isOpen: boolean) => void;
 }
 
 export default function PatientHeader({
   selectedKunjungan,
   getAge,
-  setIsScreeningModalOpen
+  setIsScreeningModalOpen,
+  setIsRiwayatModalOpen
 }: PatientHeaderProps) {
   if (!selectedKunjungan) return null;
   
@@ -23,13 +25,22 @@ export default function PatientHeader({
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{selectedKunjungan.pasien.namaLengkap}</h1>
-            <button 
-              onClick={() => setIsScreeningModalOpen(true)}
-              className="bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 px-3 py-1 rounded-none font-bold text-xs flex items-center shadow-sm transition-colors"
-            >
-              <User className="w-3 h-3 mr-1.5" />
-              Hasil Screening Perawat
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setIsScreeningModalOpen(true)}
+                className="bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 px-3 py-1 rounded-none font-bold text-xs flex items-center shadow-sm transition-colors"
+              >
+                <User className="w-3 h-3 mr-1.5" />
+                Screening Perawat
+              </button>
+              <button 
+                onClick={() => setIsRiwayatModalOpen(true)}
+                className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-3 py-1 rounded-none font-bold text-xs flex items-center shadow-sm transition-colors"
+              >
+                <Clock className="w-3 h-3 mr-1.5" />
+                Riwayat RME
+              </button>
+            </div>
           </div>
           <div className="text-sm text-gray-600 flex items-center mt-1 font-medium">
             <span className="font-mono bg-gray-100 px-1.5 py-0.5 mr-2 text-gray-800 rounded">{selectedKunjungan.pasien.noRM}</span>

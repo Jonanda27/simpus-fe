@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Poliklinik, LayananKlinik, PoliklinikPayload, LayananKlinikPayload } from '../types/klinik.types';
 import { klinikService } from '../services/klinik.service';
+import { satusehatService } from '../services/satusehat.service';
 
 interface KlinikState {
   polikliniks: Poliklinik[];
@@ -18,6 +19,7 @@ interface KlinikState {
   createLayanan: (data: LayananKlinikPayload) => Promise<void>;
 
   fetchDokterByPoli: (poliId: string) => Promise<void>;
+  syncLocationIHS: (poliId: string) => Promise<any>;
 }
 
 export const useKlinikStore = create<KlinikState>((set, get) => ({
@@ -100,6 +102,24 @@ export const useKlinikStore = create<KlinikState>((set, get) => ({
       set({ error: (error as any).message });
     } finally {
       set({ isLoadingDokter: false });
+    }
+  },
+
+  syncLocationIHS: async (poliId: string) => {
+    set({ isLoadingPoli: true, error: null });
+    try {
+      const response = await satusehatService.syncPoliklinikLocation(poliId);
+      if (response.success) {
+        await get().fetchPoliklinik();
+        return response;
+      }
+      return response;
+    } catch (error: any) {
+      set({ 
+        error: error.message || 'Gagal sinkronisasi Lokasi IHS', 
+        isLoadingPoli: false 
+      });
+      throw error;
     }
   }
 }));

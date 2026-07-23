@@ -19,32 +19,41 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 
-// DUMMY DATA UNTUK DASHBOARD PERAWAT
-const dummyStats = {
-  totalAntrean: 38,
-  belumSkrining: 15,
-  sudahSkrining: 23,
-};
-
-const dummyTriage = {
-  merah: 1,
-  kuning: 3,
-  hijau: 34,
-  hitam: 0
-};
-
-const dummyAntrianPerawat = [
-  { id: '1', noAntrian: 'A-005', jamRegistrasi: '08:45', namaLengkap: 'Budi Santoso', noRM: 'RM-2024-0091', jenisKelamin: 'L', umur: 45, poliTujuan: 'Poli Umum', status: 'BELUM_SKRINING', triage: '-' },
-  { id: '2', noAntrian: 'B-012', jamRegistrasi: '08:50', namaLengkap: 'Siti Aminah', noRM: 'RM-2024-0154', jenisKelamin: 'P', umur: 62, poliTujuan: 'Poli Gigi', status: 'BELUM_SKRINING', triage: '-' },
-  { id: '3', noAntrian: 'C-002', jamRegistrasi: '08:55', namaLengkap: 'Dewi Rahayu', noRM: 'RM-2023-0501', jenisKelamin: 'P', umur: 28, poliTujuan: 'Poli KIA', status: 'SEDANG_SKRINING', triage: '-' },
-  { id: '4', noAntrian: 'A-006', jamRegistrasi: '09:05', namaLengkap: 'Hendra Wijaya', noRM: 'RM-2022-0211', jenisKelamin: 'L', umur: 55, poliTujuan: 'Poli Umum', status: 'BELUM_SKRINING', triage: 'Kuning' },
-  { id: '5', noAntrian: 'IGD-01', jamRegistrasi: '09:15', namaLengkap: 'Anonim (Mr. X)', noRM: '-', jenisKelamin: 'L', umur: 30, poliTujuan: 'IGD', status: 'BELUM_SKRINING', triage: 'Merah' },
-];
+import { kunjunganService } from '@/services/kunjungan.service';
 
 export default function PerawatDashboardPage() {
   const { user } = useAuthStore();
   const [currentTime, setCurrentTime] = useState('');
   const [isClient, setIsClient] = useState(false);
+  const [dashboardData, setDashboardData] = useState<any>({
+    stats: { totalAntrean: 0, belumSkrining: 0, sudahSkrining: 0 },
+    triage: { merah: 0, kuning: 0, hijau: 0, hitam: 0 },
+    antrean: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setIsLoading(true);
+      const data = await kunjunganService.getPerawatDashboardStats();
+      setDashboardData(data);
+    } catch (error) {
+      console.error('Failed to fetch perawat dashboard stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardStats();
+    
+    // Auto refresh every 30 seconds
+    const intervalStats = setInterval(() => {
+      fetchDashboardStats();
+    }, 30000);
+
+    return () => clearInterval(intervalStats);
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
@@ -56,11 +65,16 @@ export default function PerawatDashboardPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'BELUM_SKRINING':
+      case 'MENUNGGU':
         return <span className="px-2.5 py-1 text-xs font-semibold rounded-none bg-amber-100 text-amber-800 border border-amber-200">Menunggu Skrining</span>;
-      case 'SEDANG_SKRINING':
+      case 'DIPROSES_SCREENING':
         return <span className="px-2.5 py-1 text-xs font-semibold rounded-none bg-blue-100 text-blue-800 border border-blue-200">Sedang Skrining</span>;
-      case 'SUDAH_SKRINING':
+      case 'MENUNGGU_DOKTER':
+      case 'DIPERIKSA':
+      case 'SELESAI':
+      case 'MENUNGGU_FARMASI':
+      case 'MENUNGGU_KASIR':
+      case 'PULANG':
         return <span className="px-2.5 py-1 text-xs font-semibold rounded-none bg-emerald-100 text-emerald-800 border border-emerald-200">Selesai Skrining</span>;
       default:
         return <span className="px-2.5 py-1 text-xs font-semibold rounded-none bg-gray-100 text-gray-800 border border-gray-200">{status}</span>;
@@ -122,12 +136,12 @@ export default function PerawatDashboardPage() {
             </div>
             <div className="relative z-10">
               <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Total Antrean Masuk</p>
-              <h3 className="text-4xl font-extrabold text-gray-900">{dummyStats.totalAntrean}</h3>
+              <h3 className="text-4xl font-extrabold text-gray-900">{dashboardData.stats.totalAntrean}</h3>
               <p className="text-sm text-gray-500 mt-1">Pasien hari ini</p>
             </div>
             <div className="relative z-10 mt-6 flex items-center gap-1.5 text-xs font-semibold text-blue-600">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{dummyStats.sudahSkrining} pasien sudah diskrining</span>
+              <span>{dashboardData.stats.sudahSkrining} pasien sudah diskrining</span>
             </div>
           </div>
 
@@ -138,7 +152,7 @@ export default function PerawatDashboardPage() {
             </div>
             <div className="relative z-10">
               <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Menunggu Skrining</p>
-              <h3 className="text-4xl font-extrabold text-gray-900">{dummyStats.belumSkrining}</h3>
+              <h3 className="text-4xl font-extrabold text-gray-900">{dashboardData.stats.belumSkrining}</h3>
               <p className="text-sm text-gray-500 mt-1">Perlu pemeriksaan awal</p>
             </div>
             <div className="relative z-10 mt-6 flex items-center gap-1.5 text-xs font-bold text-amber-500">
@@ -154,12 +168,12 @@ export default function PerawatDashboardPage() {
             </div>
             <div className="relative z-10">
               <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Pasien Gawat Darurat</p>
-              <h3 className="text-4xl font-extrabold text-gray-900">{dummyTriage.merah}</h3>
+              <h3 className="text-4xl font-extrabold text-gray-900">{dashboardData.triage.merah}</h3>
               <p className="text-sm text-gray-500 mt-1">Triage Merah (Resusitasi)</p>
             </div>
             <div className="relative z-10 mt-6 flex items-center gap-3 text-xs font-semibold">
-              <span className="text-yellow-600 flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-400"></div> {dummyTriage.kuning} Kuning</span>
-              <span className="text-green-600 flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div> {dummyTriage.hijau} Hijau</span>
+              <span className="text-yellow-600 flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-400"></div> {dashboardData.triage.kuning} Kuning</span>
+              <span className="text-green-600 flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div> {dashboardData.triage.hijau} Hijau</span>
             </div>
           </div>
         </div>
@@ -194,7 +208,22 @@ export default function PerawatDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {dummyAntrianPerawat.map((item) => (
+                    {dashboardData.antrean.map((item: any) => {
+                      // Calculate age
+                      let age = 0;
+                      if (item.pasien?.tanggalLahir) {
+                        const today = new Date();
+                        const birthDate = new Date(item.pasien.tanggalLahir);
+                        age = today.getFullYear() - birthDate.getFullYear();
+                        const m = today.getMonth() - birthDate.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                          age--;
+                        }
+                      }
+                      
+                      const genderStr = item.pasien?.jenisKelamin === 'Laki-Laki' ? 'L' : 'P';
+                      
+                      return (
                       <tr key={item.id} className="hover:bg-blue-50/50 transition-colors group">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="font-bold text-gray-900 bg-gray-100 px-2 py-1">{item.noAntrian}</span>
@@ -203,17 +232,17 @@ export default function PerawatDashboardPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-bold text-gray-900">{item.namaLengkap}</div>
-                          <div className="text-xs text-gray-500 font-mono mt-0.5">{item.jenisKelamin}, {item.umur} thn • RM: {item.noRM}</div>
+                          <div className="font-bold text-gray-900">{item.pasien?.namaLengkap}</div>
+                          <div className="text-xs text-gray-500 font-mono mt-0.5">{genderStr}, {age} thn • RM: {item.pasien?.noRM || 'Baru'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-gray-700 font-medium">{item.poliTujuan}</span>
+                          <span className="text-gray-700 font-medium">{item.poliklinik?.namaPoli || item.poliTujuan || '-'}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getTriageBadge(item.triage)}
+                          {getTriageBadge(item.screening?.kategoriTriage || '-')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(item.status)}
+                          {getStatusBadge(item.statusKunjungan)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <Link 
@@ -224,7 +253,15 @@ export default function PerawatDashboardPage() {
                           </Link>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
+                    {dashboardData.antrean.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                          Tidak ada antrean saat ini.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
