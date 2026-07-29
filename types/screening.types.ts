@@ -121,6 +121,7 @@ export interface CreateScreeningPayload {
   riwayatOperasi?: string;
   riwayatRawatInap?: string;
   riwayatTransfusi?: string;
+  riwayatPengobatan?: string;
   tinggiBadan?: number;
   beratBadan?: number;
   lingkarPerut?: number;
@@ -132,6 +133,8 @@ export interface CreateScreeningPayload {
   suhuTubuh?: number;
   saturasiOksigen?: number;
   skalaNyeri?: number;
+
+  headToToe?: Record<string, any>;
 
   // Step 2: Triage
   kategoriTriage?: string;

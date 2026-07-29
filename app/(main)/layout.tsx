@@ -111,6 +111,11 @@ export default function DashboardLayout({
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Master Data Pasien</span>
               </Link>
 
+              <Link href="/administrasi/monitoring-encounter" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <Activity className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Monitoring FHIR</span>
+              </Link>
+
               <Link href="#" className="flex items-center px-6 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                 <FileText className="w-7 h-7 text-gray-400 md:group-hover:text-blue-600 flex-shrink-0 transition-colors" />
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Laporan Kunjungan</span>
@@ -159,6 +164,11 @@ export default function DashboardLayout({
               <Link href="/admin/master-obat" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/master-obat' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                 <Pill className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/admin/master-obat' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Master Obat</span>
+              </Link>
+
+              <Link href="/administrasi/monitoring-encounter" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <Activity className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Monitoring FHIR</span>
               </Link>
 
               <Link href="/admin/master-alergi" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/master-alergi' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
@@ -388,10 +398,10 @@ export default function DashboardLayout({
               </div>
               <div className="ml-3 hidden sm:block text-sm text-left">
                 <p className="font-bold text-gray-900 leading-none">
-                  {user?.nama_lengkap || user?.username || 'Petugas'}
+                  {user?.namaLengkap || user?.nama_lengkap || 'Petugas'}
                 </p>
                 <p className="text-gray-500 mt-1 text-xs uppercase tracking-wide">
-                  {role}
+                  {role}{user?.poliklinik?.namaPoli ? ` - ${user.poliklinik.namaPoli}` : user?.poliklinikId ? ` - ${user.poliklinikId}` : ''}
                 </p>
               </div>
             </div>

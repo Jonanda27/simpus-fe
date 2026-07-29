@@ -28,6 +28,7 @@ export const screeningSchema = z.object({
   riwayatOperasi: z.string().optional(),
   riwayatRawatInap: z.string().optional(),
   riwayatTransfusi: z.string().optional(),
+  riwayatPengobatan: z.string().optional(),
   
   // Tanda Vital Lengkap (Wajib)
   tinggiBadan: z.number().min(1, 'Tinggi badan wajib diisi'),
@@ -41,6 +42,8 @@ export const screeningSchema = z.object({
   pernapasan: z.number().min(1, 'Pernapasan wajib diisi'),
   saturasiOksigen: optionalNumber,
   skalaNyeri: optionalNumber,
+  luasPermukaanTubuh: optionalNumber,
+  statusPsikologis: z.string().optional(),
 
   // STEP 2: TRIAGE (Conditional for IGD)
   kategoriTriage: z.enum(['Merah', 'Kuning', 'Hijau', 'Hitam', '']).optional(),
@@ -48,23 +51,26 @@ export const screeningSchema = z.object({
   sirkulasi: z.string().optional(),
   kesadaran: z.string().optional(), // AVPU/GCS untuk Triage
 
+  // Head to Toe Physical Exam Object (SATUSEHAT 28 Organs)
+  headToToe: z.record(z.string(), z.any()).optional(),
+
   // STEP 3: PTM & FAKTOR RISIKO (Conditional for Usia >= 15)
   riwayatKeluarga: checkboxArray,
   
   // Gaya Hidup
-  merokok: z.enum(['Ya', 'Tidak', 'Mantan', '']).optional(),
+  merokok: z.string().optional(),
   lamaMerokok: z.string().optional(),
   jumlahBatang: z.string().optional(),
-  alkohol: z.enum(['Ya', 'Tidak', '']).optional(),
-  narkoba: z.enum(['Ya', 'Tidak', '']).optional(),
-  aktivitasFisik: z.enum(['Kurang', 'Cukup', 'Baik', '']).optional(),
-  polaMakan: z.enum(['Sehat', 'Tidak Sehat', '']).optional(),
+  alkohol: z.string().optional(),
+  narkoba: z.string().optional(),
+  aktivitasFisik: z.string().optional(),
+  polaMakan: z.string().optional(),
   text: z.string().optional(),
-  konsumsiBuah: z.enum(['Cukup', 'Kurang', '']).optional(),
-  konsumsiSayur: z.enum(['Cukup', 'Kurang', '']).optional(),
-  konsumsiGaram: z.enum(['Tinggi', 'Normal', 'Rendah', '']).optional(),
-  konsumsiGula: z.enum(['Tinggi', 'Normal', 'Rendah', '']).optional(),
-  tidur: z.enum(['Cukup', 'Kurang', '']).optional(),
+  konsumsiBuah: z.string().optional(),
+  konsumsiSayur: z.string().optional(),
+  konsumsiGaram: z.string().optional(),
+  konsumsiGula: z.string().optional(),
+  tidur: z.string().optional(),
 
   // Faktor Risiko Lain
   faktorRisikoLain: checkboxArray,
@@ -78,10 +84,10 @@ export const screeningSchema = z.object({
 
   // STEP 4: TB & JIWA
   gejalaTB: checkboxArray,
-  kontakTB: z.enum(['Ya', 'Tidak', 'Tidak Tahu', '']).optional(),
+  kontakTB: z.string().optional(),
   riwayatTB: checkboxArray,
   faktorRisikoTB: checkboxArray,
-  hasilTB: z.enum(['Suspek TB', 'Bukan Suspek', 'Perlu Pemeriksaan Dahak', 'Perlu Foto Thoraks', '']).optional(),
+  hasilTB: z.string().optional(),
   
   // Jiwa
   jiwaEmosional: checkboxArray,
@@ -101,8 +107,8 @@ export const screeningSchema = z.object({
   catatanKesehatanJiwa: z.string().optional(),
 
   // STEP 5: HASIL
-  statusKesehatan: z.enum(['Rendah', 'Sedang', 'Tinggi', '']).optional(),
-  prioritasPelayanan: z.enum(['Rutin', 'Penting', 'Gawat Darurat', '']).optional(),
+  statusKesehatan: z.string().optional(),
+  prioritasPelayanan: z.string().optional(),
   tindakLanjut: checkboxArray,
   catatanPetugas: z.string().optional(),
 });

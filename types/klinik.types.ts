@@ -23,3 +23,10 @@ export interface LayananKlinik {
 
 export type PoliklinikPayload = Omit<Poliklinik, 'id' | 'createdAt' | 'updatedAt'>;
 export type LayananKlinikPayload = Omit<LayananKlinik, 'id' | 'createdAt' | 'updatedAt'>;
+
+export interface DokterByPoli {
+  id: string;
+  username: string;
+  namaLengkap?: string | null;
+  nama_lengkap?: string | null;
+}

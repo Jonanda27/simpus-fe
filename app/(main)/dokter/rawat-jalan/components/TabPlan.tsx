@@ -23,11 +23,15 @@ export default function TabPlan({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Rencana Terapi / Tindakan (Medis & Operatif)</label>
-            <textarea rows={4} value={soapData.rencanaTerapi || ''} onChange={e => setSoapData({...soapData, rencanaTerapi: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-200 rounded-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm text-gray-900" placeholder="Contoh: Trepanasi, Devitalisasi pulpa..." />
+            <textarea rows={3} value={soapData.rencanaTerapi || ''} onChange={e => setSoapData({...soapData, rencanaTerapi: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-200 rounded-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm text-gray-900" placeholder="Contoh: Trepanasi, Devitalisasi pulpa..." />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Tujuan Perawatan / Target Pengobatan Pasien (FHIR Goal SATUSEHAT)</label>
+            <textarea rows={2} value={soapData.tujuanPerawatan || ''} onChange={e => setSoapData({...soapData, tujuanPerawatan: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-200 rounded-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm text-gray-900" placeholder="Contoh: Bebas dari rasa nyeri, Tekanan darah terstabilkan < 130/80 mmHg..." />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Instruksi Medis / Edukasi Pasien</label>
-            <textarea rows={3} value={soapData.instruksiMedis || ''} onChange={e => setSoapData({...soapData, instruksiMedis: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-200 rounded-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm text-gray-900" placeholder="Contoh: Jangan makan makanan keras di sisi yang sakit..." />
+            <textarea rows={2} value={soapData.instruksiMedis || ''} onChange={e => setSoapData({...soapData, instruksiMedis: e.target.value})} className="w-full px-4 py-3 bg-white border border-blue-200 rounded-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm text-gray-900" placeholder="Contoh: Jangan makan makanan keras di sisi yang sakit..." />
           </div>
         </div>
       </div>

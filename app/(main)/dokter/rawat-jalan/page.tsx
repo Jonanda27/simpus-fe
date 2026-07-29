@@ -175,31 +175,34 @@ export default function DokterRawatJalanPage() {
     }
   };
 
-  // Sync SOAP data when rekamMedis is loaded
+  // Sync SOAP data when rekamMedis or screeningData is loaded
   useEffect(() => {
-    if (rekamMedis) {
-      setSoapData({
-        keluhanUtama: rekamMedis.keluhanUtama || '',
-        riwayatPenyakitSekarang: rekamMedis.riwayatPenyakitSekarang || '',
-        riwayatPenyakitDahulu: rekamMedis.riwayatPenyakitDahulu || '',
-        riwayatAlergi: rekamMedis.riwayatAlergi || '',
-        alergiArr: alergiList ? alergiList.map(a => ({
-          alergiId: a.alergiId,
-          nama_alergi: a.alergiMaster?.nama_alergi || a.manifestasiNama,
-          manifestasiKode: a.manifestasiKode,
-          manifestasiNama: a.manifestasiNama,
-          tingkatKeparahan: a.tingkatKeparahan
-        })) : [],
-        keadaanUmum: rekamMedis.keadaanUmum || 'Tampak Sakit Ringan',
-        kesadaran: rekamMedis.kesadaran || 'Compos Mentis (Sadar Penuh)',
-        pemeriksaanFisik: rekamMedis.pemeriksaanFisik || '',
-        hasilPenunjang: rekamMedis.hasilPenunjang || '',
-        diagnosisKlinis: rekamMedis.diagnosisKlinis || '',
-        rencanaTerapi: rekamMedis.rencanaTerapi || '',
-        instruksiMedis: rekamMedis.instruksiMedis || '',
-      });
+    if (rekamMedis || screeningData) {
+      setSoapData(prev => ({
+        ...prev,
+        keluhanUtama: rekamMedis?.keluhanUtama || screeningData?.keluhanUtama || prev.keluhanUtama || '',
+        riwayatPenyakitSekarang: rekamMedis?.riwayatPenyakitSekarang || screeningData?.dataTambahan?.riwayat?.riwayatPenyakitSekarang || prev.riwayatPenyakitSekarang || '',
+        riwayatPenyakitDahulu: rekamMedis?.riwayatPenyakitDahulu || screeningData?.dataTambahan?.riwayat?.riwayatPenyakitDahulu || prev.riwayatPenyakitDahulu || '',
+        riwayatAlergi: rekamMedis?.riwayatAlergi || screeningData?.dataTambahan?.riwayat?.riwayatAlergi || prev.riwayatAlergi || '',
+        alergiArr: (alergiList && alergiList.length > 0) 
+          ? alergiList.map(a => ({
+              alergiId: a.alergiId,
+              nama_alergi: a.alergiMaster?.nama_alergi || a.manifestasiNama,
+              manifestasiKode: a.manifestasiKode,
+              manifestasiNama: a.manifestasiNama,
+              tingkatKeparahan: a.tingkatKeparahan
+            }))
+          : (prev.alergiArr || []),
+        keadaanUmum: rekamMedis?.keadaanUmum || 'Tampak Sakit Ringan',
+        kesadaran: rekamMedis?.kesadaran || screeningData?.dataTambahan?.triage?.kesadaran || 'Compos Mentis (Sadar Penuh)',
+        pemeriksaanFisik: rekamMedis?.pemeriksaanFisik || prev.pemeriksaanFisik || '',
+        hasilPenunjang: rekamMedis?.hasilPenunjang || prev.hasilPenunjang || '',
+        diagnosisKlinis: rekamMedis?.diagnosisKlinis || prev.diagnosisKlinis || '',
+        rencanaTerapi: rekamMedis?.rencanaTerapi || prev.rencanaTerapi || '',
+        instruksiMedis: rekamMedis?.instruksiMedis || prev.instruksiMedis || '',
+      }));
     }
-  }, [rekamMedis, alergiList]);
+  }, [rekamMedis, screeningData, alergiList]);
 
   // Sync order lab data when loaded
   useEffect(() => {
@@ -251,6 +254,47 @@ export default function DokterRawatJalanPage() {
       }
     }
   }, [activeTab]);
+
+  const fillDokterDummyData = () => {
+    setSoapData({
+      keluhanUtama: 'Pasien mengeluh demam tinggi sejak 3 hari yang lalu, disertai pusing, mual, dan badan terasa lemas.',
+      riwayatPenyakitSekarang: 'Demam meningkat di sore dan malam hari. Pasien mengaku nafsu makan menurun dan sempat muntah 1x tadi pagi.',
+      riwayatPenyakitDahulu: 'Riwayat Maag / Gastritis 1 tahun lalu. Tidak ada riwayat hipertensi atau diabetes.',
+      riwayatAlergi: 'Tidak ada alergi obat maupun makanan.',
+      keadaanUmum: 'Tampak Sakit Sedang',
+      kesadaran: 'Compos Mentis (Sadar Penuh)',
+      pemeriksaanFisik: 'Kepala: Normocephal, Mata: Anemis (-/-), Ikterik (-/-). Leher: Pembesaran KGB (-). Thorax: Vesikuler (+/+), Rhonchi (-/-), Wheezing (-/-). Abdomen: Supel, Nyeri tekan epigastrium (+), Bising usus normal. Ekstremitas: Akral hangat, CRT < 2d.',
+      hasilPenunjang: 'Laboratorium: Hb 13.5 g/dL, Leukosit 8.400 /uL, Trombosit 210.000 /uL, Widal Typhi O 1/160.',
+      diagnosisKlinis: 'Febris ec Susp. Fever / Demam Dengue + Gastritis Akut',
+      rencanaTerapi: '1. Istirahat cukup (Bed rest)\n2. Minum air putih 2-3 Liter/hari\n3. Paracetamol 500mg 3x1 tablet bila demam\n4. Antasida Doen 3x1 tablet sebelum makan\n5. Evaluasi darah rutin ulang bila demam > 3 hari',
+      instruksiMedis: 'Edukasi tanda bahaya perdarahan (mimisan, gusi berdarah). Segera ke UGD jika lemas berat atau muntah terus menerus.',
+      tujuanPerawatan: 'Pemulihan kondisi suhu tubuh normal dan eliminasi keluhan mual/nyeri ulu hati pasien',
+      prognosisKode: '170968001',
+      prognosisDisplay: 'Sanam / Baik (Bonam)',
+      diagnosisArr: [
+        {
+          icd10Id: 'A90',
+          kode_icd10: 'A90',
+          nama_diagnosis: 'Dengue fever [classical dengue]',
+          jenisDiagnosis: 'UTAMA'
+        },
+        {
+          icd10Id: 'K29.7',
+          kode_icd10: 'K29.7',
+          nama_diagnosis: 'Gastritis, unspecified',
+          jenisDiagnosis: 'SEKUNDER'
+        }
+      ]
+    });
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Data Dummy Dokter Terisi 100%!',
+      text: 'Semua field SOAP (Subjektif, Objektif, Asesmen, Plan/Rencana), Diagnosa ICD-10, & Tujuan Perawatan terisi otomatis.',
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  };
 
   // ─── Handlers ───
   const handlePilihPasien = (kunjungan: any) => {
@@ -397,7 +441,7 @@ export default function DokterRawatJalanPage() {
       // Selesaikan
       await selesaikanPemeriksaan();
       setActiveTab('SOAP_S');
-      Swal.fire({ icon: 'success', title: 'Pemeriksaan Selesai!', text: 'Status kunjungan telah diubah menjadi SELESAI.', timer: 2000, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'Pemeriksaan Berhasil Disimpan!', text: 'Data rekam medis tersimpan. Pasien diteruskan ke antrian Farmasi / Selesai.', timer: 2500, showConfirmButton: false });
     } catch {
       Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyelesaikan pemeriksaan' });
     }
@@ -607,6 +651,10 @@ export default function DokterRawatJalanPage() {
                 {/* Bottom Footer Actions */}
                 <div className="bg-white p-4 border-t border-gray-200 flex justify-between shadow-lg z-20 relative">
                   <div className="flex gap-2">
+                    <button onClick={fillDokterDummyData} type="button" className="px-5 py-2.5 bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors text-sm rounded-none shadow-sm flex items-center">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Isi Dummy Otomatis
+                    </button>
                     <button onClick={handleTundaPemeriksaan} disabled={isSaving} className="px-6 py-2.5 bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70 flex items-center">
                       <Clock className="w-4 h-4 mr-2" />
                       Tunda Pemeriksaan

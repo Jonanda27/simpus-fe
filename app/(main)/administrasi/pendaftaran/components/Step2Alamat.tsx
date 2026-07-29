@@ -5,6 +5,7 @@ import { Select as CustomSelect } from '@/components/ui/Select';
 import { RegistrationFormData } from '../schema';
 import dynamic from 'next/dynamic';
 import { MapPin } from 'lucide-react';
+import { useKodePosStore } from '@/store/kodepos.store';
 
 const MapPickerModal = dynamic(() => import('@/components/ui/MapPickerModal'), { ssr: false });
 
@@ -23,10 +24,32 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isSosialLainnya, setIsSosialLainnya] = useState(false);
 
+  // Zustand Store for Kode Pos
+  const { fetchKodePos } = useKodePosStore();
+
   // We need to watch the values to trigger fetching of the next level
   const selectedProvName = watch('provinsi');
   const selectedKabName = watch('kabupatenKota');
   const selectedKecName = watch('kecamatan');
+  const selectedDesaName = watch('desaKelurahan');
+
+  const handleDesaChange = async (val: string) => {
+    setValue('desaKelurahan', val);
+    if (val && selectedKecName) {
+      const code = await fetchKodePos(val, selectedKecName);
+      if (code) {
+        setValue('kodePos', code);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDesaName && selectedKecName) {
+      fetchKodePos(selectedDesaName, selectedKecName).then((code) => {
+        if (code) setValue('kodePos', code);
+      });
+    }
+  }, [selectedDesaName, selectedKecName, fetchKodePos, setValue]);
 
   const toTitleCase = (str: string) => {
     return str.replace(
@@ -108,6 +131,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
     }
   }, [selectedKecName, districts]);
 
+  // Auto-Fetch Kode Pos diproses secara terpusat oleh useKodePosStore
   const rtRwValue = watch('rtRw') || '';
   const [rtVal = '', rwVal = ''] = rtRwValue.split('/');
 
@@ -195,6 +219,7 @@ export default function Step2Alamat({ register, errors, watch, setValue }: Step2
               {...register('desaKelurahan')}
               value={watch('desaKelurahan') || ""}
               disabled={!selectedKecName}
+              onChange={(e) => handleDesaChange(e.target.value)}
             >
               <option value="">Pilih Desa/Kelurahan</option>
               {villages.map(v => (

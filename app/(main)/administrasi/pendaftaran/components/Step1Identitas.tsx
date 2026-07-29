@@ -22,18 +22,22 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const [showSatusehatAlert, setShowSatusehatAlert] = useState(false);
+  const [satusehatNotFound, setSatusehatNotFound] = useState(false);
   const router = useRouter();
 
   // By default, if nothing is selected, we assume 'Baru'
   const currentSkenario = isBayi ? 'Bayi' : (statusPasien === 'Lama' ? 'Lama' : 'Baru');
 
-  // Ensure default state on mount if not set
+  // Auto generate RM Number if empty on mount or scenario change
   useEffect(() => {
     if (!statusPasien) {
       setValue('statusPasien', 'Baru');
     }
-  }, [statusPasien, setValue]);
+    const currentRm = watch('noRekamMedis');
+    if (!currentRm && currentSkenario !== 'Lama') {
+      setValue('noRekamMedis', 'RM-' + Math.floor(Math.random() * 1000000));
+    }
+  }, [statusPasien, currentSkenario, setValue, watch]);
 
   const setSkenario = (type: 'Baru' | 'Lama' | 'Bayi') => {
     // Reset seluruh field terlebih dahulu agar bersih
@@ -43,8 +47,13 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
     if (type === 'Bayi') {
       setValue('statusPasien', 'Baru'); // Technically a new patient
       setValue('isBayi', true);
+      setValue('noRekamMedis', 'RM-' + Math.floor(Math.random() * 1000000));
+    } else if (type === 'Baru') {
+      setValue('statusPasien', 'Baru');
+      setValue('isBayi', false);
+      setValue('noRekamMedis', 'RM-' + Math.floor(Math.random() * 1000000));
     } else {
-      setValue('statusPasien', type);
+      setValue('statusPasien', 'Lama');
       setValue('isBayi', false);
     }
   };
@@ -125,26 +134,28 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
     }
     
     setIsValidating(true);
+    
+    // Generate No RM if empty regardless of SATUSEHAT result
+    const currentRm = watch('noRekamMedis');
+    if (!currentRm) {
+      setValue('noRekamMedis', 'RM-' + Math.floor(Math.random() * 1000000));
+    }
+
     try {
       const response = await satusehatService.checkPatientNIK(nik);
       if (response.success && response.data) {
-        // Generate No RM if empty
-        const currentRm = watch('noRekamMedis');
-        if (!currentRm) {
-          setValue('noRekamMedis', 'RM-' + Math.floor(Math.random() * 1000000));
-        }
-        
         setValue('noIHS', response.data.ihsNumber || '');
         if (response.data.pasienName) setValue('namaLengkap', response.data.pasienName);
         if (response.data.gender) setValue('jenisKelamin', response.data.gender === 'male' ? 'Laki-laki' : 'Perempuan');
         if (response.data.birthDate) setValue('tanggalLahir', response.data.birthDate);
         
+        setSatusehatNotFound(false);
         alert("Data Kemenkes berhasil ditemukan dan diisikan otomatis!");
       } else {
-        setShowSatusehatAlert(true);
+        setSatusehatNotFound(true);
       }
     } catch (error: any) {
-      setShowSatusehatAlert(true);
+      setSatusehatNotFound(true);
     } finally {
       setIsValidating(false);
     }
@@ -202,15 +213,15 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
           
           <div 
             onClick={() => setSkenario('Bayi')}
-            className={`cursor-pointer p-4 border-2 rounded-none transition-all duration-200 ${currentSkenario === 'Bayi' ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300 bg-white'}`}
+            className={`cursor-pointer p-4 border-2 rounded-none transition-all duration-200 ${currentSkenario === 'Bayi' ? 'border-indigo-600 bg-indigo-50/60 shadow-sm' : 'border-slate-200 hover:border-indigo-300 bg-white'}`}
           >
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-none ${currentSkenario === 'Bayi' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+              <div className={`p-3 rounded-none ${currentSkenario === 'Bayi' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
                 <Baby className="w-5 h-5" />
               </div>
               <div>
-                <div className="font-semibold text-gray-900">Bayi Baru Lahir</div>
-                <div className="text-xs text-gray-500 mt-1">Kasus belum punya NIK</div>
+                <div className="font-semibold text-slate-900">Bayi Baru Lahir</div>
+                <div className="text-xs text-slate-500 mt-1">Kasus belum punya NIK</div>
               </div>
             </div>
           </div>
@@ -220,7 +231,7 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
       {/* DYNAMIC TOP SECTION */}
       {currentSkenario === 'Lama' && (
         <div className="animate-in fade-in slide-in-from-top-2">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">Pencarian Data Pasien Lama</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">Pencarian Data Pasien Lama</h3>
           <div className="flex flex-col md:flex-row items-end gap-4">
             <div className="flex-1 w-full">
               <Input 
@@ -235,7 +246,7 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
               type="button" 
               onClick={handleSearchPasienLama}
               disabled={isSearching}
-              className="h-10 px-8 w-full md:w-auto bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2 transition-colors rounded-none"
+              className="h-10 px-8 w-full md:w-auto bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2 transition-colors rounded-none shadow-sm"
             >
               {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               Cari & Tarik Data
@@ -245,8 +256,8 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
       )}
 
       {currentSkenario === 'Bayi' && (
-        <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-none animate-in fade-in slide-in-from-top-2">
-          <h3 className="text-md font-semibold text-gray-900 mb-4 flex items-center gap-2"><Baby className="w-5 h-5 text-blue-600" /> Data Khusus Bayi & Orang Tua</h3>
+        <div className="p-6 bg-indigo-50/50 border border-indigo-200 rounded-none animate-in fade-in slide-in-from-top-2">
+          <h3 className="text-md font-semibold text-indigo-900 mb-4 flex items-center gap-2"><Baby className="w-5 h-5 text-indigo-600" /> Data Khusus Bayi & Orang Tua</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input label="Nama Ibu *" placeholder="Nama kandung ibu" {...namaIbuRest} onChange={(e) => onNamaIbuChange(formatPascalCase(e))} error={errors.namaIbu?.message} />
             <Input label="NIK Ibu *" placeholder="16 digit NIK ibu" {...register('nikIbu')} error={errors.nikIbu?.message} />
@@ -256,7 +267,21 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
               <Input label="Berat Lahir (gram)" placeholder="Misal: 3200" {...register('beratLahir')} />
               <Input label="Panjang Lahir (cm)" placeholder="Misal: 50" {...register('panjangLahir')} />
             </div>
-            <Input label="Jam Lahir" type="time" {...register('jamLahir')} />
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Jam Lahir" type="time" {...register('jamLahir')} />
+              <Select 
+                label="Urutan Kelahiran (Kembar) *" 
+                {...register('urutanKelahiran', { valueAsNumber: true })}
+                error={errors.urutanKelahiran?.message}
+                options={[
+                  { label: 'Tunggal (Nilai: 0)', value: '0' },
+                  { label: 'Anak Ke-1 (Kembar 1)', value: '1' },
+                  { label: 'Anak Ke-2 (Kembar 2)', value: '2' },
+                  { label: 'Anak Ke-3 (Kembar 3)', value: '3' },
+                  { label: 'Anak Ke-4 (Kembar 4)', value: '4' },
+                ]} 
+              />
+            </div>
           </div>
         </div>
       )}
@@ -264,13 +289,35 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
       {/* CORE IDENTITY FORM */}
       <div>
         <h3 className="text-lg font-bold text-gray-900 mb-4">Data Identitas Utama</h3>
+        
+        {satusehatNotFound && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-none flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-amber-800 text-sm">Pasien belum terdaftar di SATUSEHAT</h4>
+              <p className="text-amber-700 text-sm mt-1 leading-relaxed">
+                Sistem akan otomatis mendaftarkan identitas ini ke Kemenkes saat Anda mengklik tombol Simpan. 
+                Silakan <b>lanjutkan pengisian form secara manual</b> hingga lengkap.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           <div className="md:col-span-2 flex flex-col md:flex-row gap-4 items-start">
             <div className="flex-1 w-full">
-              <Input label="NIK (Nomor Induk Kependudukan) *" placeholder="16 digit angka" maxLength={16} readOnly={currentSkenario === 'Lama'} className={currentSkenario === 'Lama' ? 'bg-gray-50' : ''} {...register('nik')} error={errors.nik?.message} />
+              <Input 
+                label={currentSkenario === 'Bayi' ? "NIK Pasien (Belum Ada - NIK Ibu Digunakan di SATUSEHAT)" : "NIK (Nomor Induk Kependudukan) *"} 
+                placeholder={currentSkenario === 'Bayi' ? "Kosong / Belum memiliki NIK" : "16 digit angka"} 
+                maxLength={16} 
+                readOnly={currentSkenario === 'Lama' || currentSkenario === 'Bayi'} 
+                className={currentSkenario === 'Lama' || currentSkenario === 'Bayi' ? 'bg-gray-50' : ''} 
+                {...register('nik')} 
+                error={errors.nik?.message} 
+              />
             </div>
-            {currentSkenario !== 'Lama' && (
+            {currentSkenario === 'Baru' && (
               <button 
                 type="button"
                 onClick={handleValidasiSatusehat}
@@ -310,50 +357,6 @@ export default function Step1Identitas({ register, errors, watch, setValue, rese
           <Select label="Kewarganegaraan *" {...register('kewarganegaraan')} error={errors.kewarganegaraan?.message} options={[{ label: 'WNI (Warga Negara Indonesia)', value: 'WNI' }, { label: 'WNA (Warga Negara Asing)', value: 'WNA' }]} />
         </div>
       </div>
-
-      {/* MODAL PERINGATAN NIK TIDAK DITEMUKAN */}
-      {showSatusehatAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-[2px] px-4 transition-all">
-          <div className="bg-white rounded-none shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-white shadow-sm ring-1 ring-red-100">
-                <AlertTriangle className="w-7 h-7 text-red-600" />
-              </div>
-              
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Data Tidak Ditemukan</h3>
-              
-              <p className="text-slate-600 text-sm mb-2 leading-relaxed">
-                NIK <span className="font-bold text-slate-900">{watch('nik')}</span> belum terdaftar di database SATUSEHAT Kemenkes.
-              </p>
-              
-              <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-                Untuk melanjutkan pendaftaran kunjungan, data identitas dan demografi pasien wajib didaftarkan terlebih dahulu ke sistem Kemenkes.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-3 justify-center w-full">
-                <button
-                  type="button"
-                  onClick={() => setShowSatusehatAlert(false)}
-                  className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-full sm:w-1/3"
-                >
-                  Tutup
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowSatusehatAlert(false);
-                    router.push('/administrasi/master-pasien/baru-satusehat');
-                  }}
-                  className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 w-full sm:flex-1 shadow-sm"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Daftarkan Pasien
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

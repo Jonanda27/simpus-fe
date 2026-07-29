@@ -84,8 +84,11 @@ export interface SOAPPayload {
   hasilPenunjang?: string;
   diagnosisKlinis?: string;
   diagnosisArr?: DiagnosaItem[];
+  prognosisKode?: string;
+  prognosisDisplay?: string;
   rencanaTerapi?: string;
   instruksiMedis?: string;
+  tujuanPerawatan?: string;
 }
 
 /** Alergi yang dipilih dokter */

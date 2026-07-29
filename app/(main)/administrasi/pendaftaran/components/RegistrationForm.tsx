@@ -80,12 +80,11 @@ export default function RegistrationForm() {
     setIsSubmitting(true);
     setApiError(null);
 
-    // Pastikan ID Rekam Medis & IHS di-generate untuk Pasien Baru (jika belum ada)
+    // Pastikan ID Rekam Medis di-generate untuk Pasien Baru (jika belum ada)
     const randomId = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const finalData = {
       ...data,
       noRekamMedis: data.noRekamMedis || `RM-2026-${randomId}`,
-      noIHS: data.noIHS || `IHS-${randomId}99`,
       nik: data.nik // Gunakan NIK asli dari form
     };
 
@@ -205,10 +204,10 @@ export default function RegistrationForm() {
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1 || isSubmitting}
-            className={`inline-flex items-center px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+            className={`inline-flex items-center px-5 py-2.5 rounded-none font-medium text-sm transition-colors ${
               currentStep === 1 
                 ? 'text-gray-300 cursor-not-allowed bg-gray-50' 
-                : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 shadow-sm'
+                : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 shadow-xs'
             }`}
           >
             <ChevronLeft className="w-5 h-5 mr-1" />
@@ -219,7 +218,7 @@ export default function RegistrationForm() {
             <button
               type="button"
               onClick={nextStep}
-              className="inline-flex items-center px-6 py-2.5 rounded-xl font-medium text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-6 py-2.5 rounded-none font-medium text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-xs transition-all focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Selanjutnya
               <ChevronRight className="w-5 h-5 ml-1" />
@@ -229,7 +228,7 @@ export default function RegistrationForm() {
               type="button"
               onClick={handleSubmit(onSubmit, onInvalid)}
               disabled={isSubmitting}
-              className="inline-flex items-center px-8 py-2.5 rounded-xl font-medium text-sm text-white bg-green-600 hover:bg-green-700 shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70"
+              className="inline-flex items-center px-8 py-2.5 rounded-none font-medium text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-all focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-70"
             >
               {isSubmitting ? (
                 <>

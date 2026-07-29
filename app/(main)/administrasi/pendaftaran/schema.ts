@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const registrationSchema = z.object({
   // Identitas & Alamat
   noRekamMedis: z.string().min(1, 'Nomor Rekam Medis wajib diisi'),
-  noIHS: z.string().min(1, 'Nomor SATUSEHAT wajib diisi'),
-  nik: z.string().length(16, 'NIK harus 16 digit'),
+  noIHS: z.string().optional().or(z.literal('')),
+  nik: z.string().optional().or(z.literal('')),
   noKk: z.string().optional().or(z.literal('')),
   namaLengkap: z.string().min(3, 'Nama Lengkap minimal 3 karakter'),
   tempatLahir: z.string().min(2, 'Tempat Lahir wajib diisi'),
@@ -40,6 +40,7 @@ export const registrationSchema = z.object({
   panjangLahir: z.string().optional().or(z.literal('')),
   jamLahir: z.string().optional().or(z.literal('')),
   jenisPersalinan: z.string().optional().or(z.literal('')),
+  urutanKelahiran: z.number().optional(),
   
   // Kontak & Penjamin
   noHp: z.string().min(10, 'Nomor HP minimal 10 digit').regex(/^\d+$/, 'Nomor HP hanya boleh berisi angka'),

@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import { Poliklinik, LayananKlinik, PoliklinikPayload, LayananKlinikPayload } from '../types/klinik.types';
+import { Poliklinik, LayananKlinik, PoliklinikPayload, LayananKlinikPayload, DokterByPoli } from '../types/klinik.types';
 import { klinikService } from '../services/klinik.service';
 import { satusehatService } from '../services/satusehat.service';
 
 interface KlinikState {
   polikliniks: Poliklinik[];
   layanans: Record<string, LayananKlinik[]>; // Key = poliklinikId
-  dokters: Record<string, {id: string, username: string, namaLengkap?: string}[]>; // Key = poliklinikId
+  dokters: Record<string, DokterByPoli[]>; // Key = poliklinikId
   isLoadingPoli: boolean;
   isLoadingLayanan: boolean;
   isLoadingDokter: boolean;
@@ -86,9 +86,6 @@ export const useKlinikStore = create<KlinikState>((set, get) => ({
   },
 
   fetchDokterByPoli: async (poliId) => {
-    // Return cache if exists
-    if (get().dokters[poliId]) return;
-
     set({ isLoadingDokter: true, error: null });
     try {
       const dokters = await klinikService.getDokterByPoli(poliId);

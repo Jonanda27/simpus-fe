@@ -199,9 +199,21 @@ export default function Step4InfeksiJiwa({ register, watch, setValue }: Step4Pro
           
         </div>
 
-        <div className="p-6 pt-0 mt-2 border-t border-gray-100">
-          <label className="block text-sm font-semibold text-gray-700 mb-2 mt-4">Catatan Observasi Psikologis (Opsional)</label>
-          <textarea {...register('catatanKesehatanJiwa')} rows={2} className="w-full px-4 py-2.5 rounded-none border border-gray-300 focus:ring-2 focus:ring-purple-500 placeholder-gray-400 text-gray-900" placeholder="Tambahkan catatan khusus terkait observasi kesehatan jiwa..."></textarea>
+        <div className="p-6 pt-0 mt-2 border-t border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          <div>
+            <label className="block text-sm font-bold text-purple-900 mb-1 mt-4">Status Psikologis Utama (FHIR SATUSEHAT 8693-4)</label>
+            <select {...register('statusPsikologis')} className="w-full px-4 py-2.5 rounded-none border border-purple-300 focus:ring-2 focus:ring-purple-500 text-gray-900 bg-purple-50/40 font-semibold text-sm">
+              <option value="Tenang / Normal">Tenang / Normal (Compos Mentis)</option>
+              <option value="Cemas / Khawatir">Cemas / Khawatir / Gelisah</option>
+              <option value="Sedih / Depresi">Sedih / Berduka / Depresi</option>
+              <option value="Gelisah / Agresif">Gelisah / Agresif / Mengamuk</option>
+              <option value="Kebingungan / Halusinasi">Kebingungan / Halusinasi / Disorientasi</option>
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-1 mt-4">Catatan Observasi Psikologis (Opsional)</label>
+            <textarea {...register('catatanKesehatanJiwa')} rows={1} className="w-full px-4 py-2 rounded-none border border-gray-300 focus:ring-2 focus:ring-purple-500 placeholder-gray-400 text-gray-900 text-sm" placeholder="Catatan khusus observasi kesehatan jiwa..."></textarea>
+          </div>
         </div>
       </div>
       

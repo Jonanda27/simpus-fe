@@ -19,6 +19,7 @@ import {
   Stethoscope
 } from 'lucide-react';
 import ScreeningForm from '../components/ScreeningForm';
+import RiwayatKedatanganTab from '../components/RiwayatKedatanganTab';
 
 export default function ScreeningFormPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -171,11 +172,7 @@ export default function ScreeningFormPage({ params }: { params: Promise<{ id: st
         )}
 
         {activeTab === 'history' && (
-          <div className="bg-white rounded-none shadow-sm border border-gray-200 p-8 text-center">
-            <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900">Riwayat Kedatangan</h3>
-            <p className="text-gray-500 mt-2 max-w-md mx-auto">Riwayat kunjungan sebelumnya akan ditampilkan di halaman ini.</p>
-          </div>
+          <RiwayatKedatanganTab noRM={kunjungan.pasien.noRM} />
         )}
 
       </div>

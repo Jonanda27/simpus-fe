@@ -11,6 +11,7 @@ import Step1Umum from './Step1Umum';
 import Step2Triage from './Step2Triage';
 import Step3RisikoPTM from './Step3RisikoPTM';
 import Step4InfeksiJiwa from './Step4InfeksiJiwa';
+import StepHeadToToe from './StepHeadToToe';
 import Step5Hasil from './Step5Hasil';
 
 import { useRouter } from 'next/navigation';
@@ -71,16 +72,17 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
     { id: 2, title: 'Triage Pasien', skipped: shouldSkipTriage },
     { id: 3, title: 'Risiko & PTM', skipped: shouldSkipPTM },
     { id: 4, title: 'Infeksi & Jiwa', skipped: false },
-    { id: 5, title: 'Hasil & Rujukan', skipped: false },
+    { id: 5, title: 'Head to Toe', skipped: false },
+    { id: 6, title: 'Hasil & Rujukan', skipped: false },
   ];
 
   // Helper to find the next valid step
   const getNextStepId = (currentId: number) => {
     let nextId = currentId + 1;
-    while (nextId <= 5 && stepsDef.find(s => s.id === nextId)?.skipped) {
+    while (nextId <= 6 && stepsDef.find(s => s.id === nextId)?.skipped) {
       nextId++;
     }
-    return Math.min(nextId, 5);
+    return Math.min(nextId, 6);
   };
 
   // Helper to find the previous valid step
@@ -127,6 +129,7 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
       riwayatOperasi: toTitleCase(data.riwayatOperasi),
       riwayatRawatInap: toTitleCase(data.riwayatRawatInap),
       riwayatTransfusi: toTitleCase(data.riwayatTransfusi),
+      riwayatPengobatan: toTitleCase(data.riwayatPengobatan),
       tinggiBadan: data.tinggiBadan,
       beratBadan: data.beratBadan,
       lingkarPerut: data.lingkarPerut,
@@ -181,7 +184,8 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
       jiwaRiwayat: data.jiwaRiwayat || [],
       catatanSkriningTB: toTitleCase(data.catatanSkriningTB),
       catatanKesehatanJiwa: toTitleCase(data.catatanKesehatanJiwa),
-      // Step 5: Hasil
+      // Step 5: Hasil & Head to Toe
+      headToToe: data.headToToe,
       statusKesehatan: data.statusKesehatan,
       prioritasPelayanan: data.prioritasPelayanan,
       tindakLanjut: data.tindakLanjut || [],
@@ -208,34 +212,100 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
 
 
   const fillDummyData = () => {
+    // Step 1: Umum & Vital
     setValue('nomorRegistrasi', kunjungan.noAntrian || '1');
     setValue('jenisKedatangan', 'Poli');
     setValue('usia', new Date().getFullYear() - new Date(kunjungan.pasien.tanggalLahir).getFullYear() || 30);
-    setValue('keluhanUtama', 'Demam tinggi naik turun sejak 3 hari yang lalu disertai flu berat.');
+    setValue('keluhanUtama', 'Demam tinggi naik turun sejak 3 hari yang lalu disertai batuk dan lemas.');
     setValue('lamaKeluhan', '3 hari');
-    setValue('tinggiBadan', 170);
+    setValue('riwayatPenyakitSekarang', 'Pasien mengeluhkan demam menggigil disertai pusing dan nyeri tenggorokan.');
+    setValue('riwayatPenyakitDahulu', 'Hipertensi ringan sejak 1 tahun yang lalu.');
+    setValue('riwayatAlergi', 'Alergi obat Amoxicillin.');
+    setValue('riwayatOperasi', 'Tidak ada riwayat operasi.');
+    setValue('riwayatRawatInap', 'Pernah dirawat inap karena Thypoid 2 tahun lalu.');
+    setValue('riwayatTransfusi', 'Tidak pernah transfusi darah.');
+    setValue('riwayatPengobatan', 'Paracetamol 500mg 3x1 tablet (membeli bebas di apotek 2 hari lalu)');
+    setValue('tinggiBadan', 168);
     setValue('beratBadan', 65);
-    setValue('lingkarPerut', 80);
+    setValue('lingkarPerut', 78);
+    setValue('imt', 23.0);
     setValue('tekananDarahSistolik', 120);
     setValue('tekananDarahDiastolik', 80);
     setValue('suhuTubuh', 37.2);
-    setValue('nadi', 84);
-    setValue('pernapasan', 20);
+    setValue('nadi', 82);
+    setValue('pernapasan', 18);
     setValue('saturasiOksigen', 98);
     setValue('skalaNyeri', 2);
+    setValue('catatanPengukuran', 'Tanda vital dalam rentang stabil.');
+
+    // Step 2: Triage
     setValue('kategoriTriage', 'Hijau');
-    setValue('jalanNapas', 'Bebas');
-    setValue('sirkulasi', 'Nadi kuat, akral hangat');
-    setValue('kesadaran', 'Compos Mentis');
+    setValue('jalanNapas', 'Bebas / Normal');
+    setValue('sirkulasi', 'Nadi teraba kuat, akral hangat, CRT < 2 detik');
+    setValue('kesadaran', 'Alert / Compos Mentis');
+
+    // Step 3: PTM & Gaya Hidup
+    setValue('riwayatKeluarga', ['Hipertensi', 'Diabetes Mellitus']);
+    setValue('catatanPenyakitKeluarga', 'Ayah riwayat Hipertensi, Ibu riwayat DM tipe 2.');
     setValue('merokok', 'Tidak');
+    setValue('lamaMerokok', '0 tahun');
+    setValue('jumlahBatang', '0');
+    setValue('alkohol', 'Tidak');
+    setValue('narkoba', 'Tidak');
+    setValue('aktivitasFisik', 'Ya, ≥ 30 menit per hari');
+    setValue('polaMakan', 'Teratur (3x sehari)');
+    setValue('konsumsiBuah', 'Cukup (setiap hari)');
+    setValue('konsumsiSayur', 'Cukup (setiap hari)');
+    setValue('konsumsiGaram', 'Sedang');
+    setValue('konsumsiGula', 'Sedang');
+    setValue('tidur', 'Cukup (7-8 jam)');
+    setValue('catatanGayaHidup', 'Pola makan dan jam tidur teratur.');
+    setValue('faktorRisikoLain', ['Kurang Olahraga']);
+    setValue('catatanRisikoLain', 'Bekerja kantoran dengan durasi duduk lama.');
+    setValue('ptmJantung', []);
+    setValue('ptmStroke', []);
+    setValue('ptmKanker', []);
+    setValue('gulaDarahSewaktu', 110);
+    setValue('catatanPtmKhusus', 'GDS Puasa / Sewaktu normal.');
+
+    // Step 4: Infeksi TB & Jiwa
+    setValue('gejalaTB', ['Batuk ≥ 2 minggu']);
+    setValue('kontakTB', 'Tidak ada');
+    setValue('riwayatTB', []);
+    setValue('faktorRisikoTB', []);
+    setValue('hasilTB', 'Bukan Suspek');
+    setValue('catatanSkriningTB', 'Batuk akut < 2 minggu, bukan indikasi TB paru.');
+    setValue('jiwaEmosional', []);
+    setValue('jiwaSosial', []);
+    setValue('jiwaPsikologis', []);
+    setValue('jiwaBunuhDiri', []);
+    setValue('jiwaZat', []);
+    setValue('jiwaRiwayat', []);
+    setValue('catatanKesehatanJiwa', 'Status emosional dan psikologis stabil.');
+
+    // Step 5: 28 Organ Physical Exam (Head to Toe)
+    const organs = [
+      'kepala', 'mata', 'telinga', 'hidung', 'rambut', 'bibir', 'gigiGeligi', 'lidah', 'langitLangit',
+      'leher', 'tenggorokan', 'tonsil', 'dada', 'payudara', 'punggung',
+      'perut', 'genital', 'anusDubur', 'lenganAtas', 'lenganBawah', 'jariTangan', 'kukuTangan',
+      'persendianTangan', 'tungkaiAtas', 'tungkaiBawah', 'jariKaki', 'kukuKaki', 'persendianKaki'
+    ];
+    organs.forEach(key => {
+      setValue(`headToToe.${key}.status`, 'Normal');
+      setValue(`headToToe.${key}.catatan`, 'Simetris, tidak ada kelainan atau deformitas');
+    });
+
+    // Step 6: Hasil & Rujukan
     setValue('statusKesehatan', 'Rendah');
     setValue('prioritasPelayanan', 'Rutin');
+    setValue('tindakLanjut', ['Pemeriksaan Dokter Umum']);
+    setValue('catatanPetugas', 'Pasien tenang dan koperatif. Siap dilakukan pemeriksaan dokter poli.');
     
     Swal.fire({
       icon: 'success',
-      title: 'Data Dummy Terisi!',
-      text: 'Semua kolom wajib di seluruh step telah diisi dengan data dummy.',
-      timer: 1500,
+      title: 'Data Dummy Terisi 100%!',
+      text: 'Seluruh kolom (Termasuk 28 Organ Head to Toe, Triage, PTM, & TB) telah terisi lengkap.',
+      timer: 2000,
       showConfirmButton: false,
     });
   };
@@ -310,15 +380,23 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
       </div>
 
       {/* Form Area */}
-      <form onSubmit={handleSubmit(onSubmit, (err) => {
-        console.error('Validation Errors keys:', Object.keys(err));
-        console.error('Validation Errors detailed:', JSON.stringify(err, null, 2));
-        Swal.fire({
-          icon: 'warning',
-          title: 'Form Belum Lengkap',
-          html: `<div class="text-left"><p class="font-bold">Harap periksa kembali isian form Anda:</p><pre class="text-xs mt-2 bg-gray-100 p-2 max-h-40 overflow-y-auto">${JSON.stringify(err, null, 2)}</pre></div>`,
-        });
-      })}>
+      <form 
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && currentStep < 6 && e.target instanceof HTMLInputElement) {
+            e.preventDefault();
+            nextStep();
+          }
+        }}
+        onSubmit={handleSubmit(onSubmit, (err) => {
+          const errList = Object.keys(err).map(k => `${k}: ${err[k]?.message || 'Wajib diisi / Tidak valid'}`);
+          console.error('Validation Errors keys:', Object.keys(err));
+          console.error('Validation Errors messages:', errList);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Form Belum Lengkap',
+            html: `<div class="text-left"><p class="font-bold">Harap periksa kembali isian form Anda:</p><ul class="list-disc pl-5 text-xs mt-2 max-h-40 overflow-y-auto">${errList.map(e => `<li>${e}</li>`).join('')}</ul></div>`,
+          });
+        })}>
         <div className="min-h-[400px]">
           <div className={currentStep === 1 ? 'block' : 'hidden'}>
             <Step1Umum register={register} errors={errors} watch={watch} setValue={setValue} />
@@ -333,6 +411,9 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
             <Step4InfeksiJiwa register={register} errors={errors} watch={watch} setValue={setValue} />
           </div>
           <div className={currentStep === 5 ? 'block' : 'hidden'}>
+            <StepHeadToToe register={register} watch={watch} setValue={setValue} />
+          </div>
+          <div className={currentStep === 6 ? 'block' : 'hidden'}>
             <Step5Hasil register={register} errors={errors} watch={watch} />
           </div>
         </div>
@@ -353,7 +434,7 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
             Kembali
           </button>
           
-          {currentStep < 5 ? (
+          {currentStep < 6 ? (
             <button
               type="button"
               onClick={nextStep}

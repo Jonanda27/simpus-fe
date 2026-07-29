@@ -3,7 +3,8 @@ export interface User {
   username: string;
   email: string | null;
   role: 'ADMINISTRASI' | 'PERAWAT' | 'DOKTER' | 'ADMIN' | 'KASIR' | 'APOTEKER' | 'LABORATORIUM' | 'PETUGAS_UKM';
-  nama_lengkap: string;
+  nama_lengkap?: string;
+  namaLengkap?: string;
   status_aktif: boolean;
   CreatedAt: string;
   UpdatedAt: string;

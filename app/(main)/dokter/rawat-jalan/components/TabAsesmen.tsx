@@ -220,6 +220,31 @@ export default function TabAsesmen({
                 ))}
               </div>
             )}
+
+            {/* Prognosis Penyakit Pasien (SATUSEHAT ClinicalImpression) */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <label className="block text-sm font-bold text-slate-800 mb-2">
+                Prognosis Penyakit Pasien (FHIR ClinicalImpression)
+              </label>
+              <select
+                value={soapData.prognosisKode || '170968001'}
+                onChange={(e) => {
+                  const selIndex = e.target.selectedIndex;
+                  const display = e.target.options[selIndex].text;
+                  setSoapData({
+                    ...soapData,
+                    prognosisKode: e.target.value,
+                    prognosisDisplay: display
+                  });
+                }}
+                className="w-full px-4 py-2.5 rounded-none border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-blue-500 font-medium text-sm text-slate-900"
+              >
+                <option value="170968001">Sanam / Baik (Bonam) - Pasien diharapkan sembuh total</option>
+                <option value="260413007">Dubia ad Bonam - Ragu-ragu cenderung baik/sembuh</option>
+                <option value="260415000">Dubia ad Malam - Ragu-ragu cenderung memburuk</option>
+                <option value="170969009">Malam / Buruk - Prognosis penyakit memburuk/kritis</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

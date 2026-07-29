@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { SignaturePad } from '@/components/ui/SignaturePad';
 import { WebcamCapture } from '@/components/ui/WebcamCapture';
 import { RegistrationFormData } from '../schema';
-import { AlertCircle, FileUp, Fingerprint } from 'lucide-react';
+import { AlertCircle, Camera, Check, CheckCircle2, ChevronRight, Fingerprint, PenTool } from 'lucide-react';
 
 interface Step5Props {
   register: UseFormRegister<RegistrationFormData>;
@@ -15,26 +15,20 @@ interface Step5Props {
 
 export default function Step5Persetujuan({ register, errors, setValue, watch }: Step5Props) {
   const metodePersetujuan = watch('metodePersetujuan') || 'Tanda Tangan';
+  const fotoWajah = watch('fotoWajah');
   
-  const handleCapJariUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setValue('capJari', reader.result as string, { shouldValidate: true, shouldDirty: true });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // State 2-Step Inner Wizard (Step 1: Foto Wajah -> Step 2: Bukti Persetujuan)
+  const [innerStep, setInnerStep] = useState<1 | 2>(1);
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Persetujuan & Sinkronisasi (Consent)</h2>
-        <p className="text-sm text-gray-500 mt-1">Harap baca dan setujui ketentuan layanan kesehatan kami.</p>
+        <h2 className="text-xl font-bold text-gray-900">Persetujuan & Verifikasi Kehadiran (Consent)</h2>
+        <p className="text-sm text-gray-500 mt-1">Lengkapi verifikasi foto wajah dan bukti persetujuan pasien.</p>
       </div>
 
       <div className="bg-amber-50 border border-amber-200 rounded-none p-4 flex gap-3">
-        <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0" />
+        <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-amber-800">
           Dengan menyetujui formulir ini, data identitas dan medis Anda akan dikelola dalam 
           Rekam Medis Elektronik (RME) yang aman.
@@ -78,59 +72,136 @@ export default function Step5Persetujuan({ register, errors, setValue, watch }: 
           />
         </div>
       </div>
-      
-      <div className="pt-6 border-t border-gray-100">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Card Kamera Wajah */}
-          <div className="bg-white border border-gray-200 rounded-none p-6 shadow-sm flex flex-col h-full">
-            <div>
-              <h3 className="text-md font-semibold text-gray-900 mb-1">Foto Wajah Pasien *</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Wajib melampirkan foto wajah pasien secara real-time untuk verifikasi kehadiran.
+
+      {/* === STEPPER BAR ALUR VERIFIKASI (Step 1 -> Step 2) === */}
+      <div className="pt-6 border-t border-gray-100 space-y-6">
+        <div className="bg-slate-50 border border-slate-200 p-4">
+          <div className="flex items-center justify-between max-w-xl mx-auto">
+            {/* Step 1 Tab Indicator */}
+            <button
+              type="button"
+              onClick={() => setInnerStep(1)}
+              className={`flex items-center gap-3 transition-all ${
+                innerStep === 1 ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                innerStep === 1 
+                  ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-xs' 
+                  : fotoWajah 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-slate-200 text-slate-600'
+              }`}>
+                {fotoWajah ? <Check className="w-4 h-4" /> : '1'}
+              </div>
+              <div className="text-left">
+                <span className="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Langkah 1</span>
+                <span className="text-sm flex items-center gap-1.5">
+                  <Camera className="w-4 h-4" /> Foto Wajah Pasien
+                </span>
+              </div>
+            </button>
+
+            <ChevronRight className="w-5 h-5 text-slate-300" />
+
+            {/* Step 2 Tab Indicator */}
+            <button
+              type="button"
+              onClick={() => {
+                if (fotoWajah) setInnerStep(2);
+              }}
+              disabled={!fotoWajah}
+              className={`flex items-center gap-3 transition-all ${
+                innerStep === 2 ? 'text-blue-600 font-bold' : 'text-slate-400 font-medium'
+              } ${!fotoWajah ? 'opacity-50 cursor-not-allowed' : 'hover:text-slate-800 cursor-pointer'}`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                innerStep === 2 ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-xs' : 'bg-slate-200 text-slate-600'
+              }`}>
+                2
+              </div>
+              <div className="text-left">
+                <span className="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Langkah 2</span>
+                <span className="text-sm flex items-center gap-1.5">
+                  <PenTool className="w-4 h-4" /> Tanda Tangan / Cap Jari
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* === CONTENT INNER STEP 1: FOTO WAJAH PASIEN (Lebar Presisi Sejajar Header) === */}
+        {innerStep === 1 && (
+          <div className="bg-white border border-slate-200 p-6 shadow-xs w-full flex flex-col items-center animate-in fade-in duration-300">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center justify-center gap-2">
+                <Camera className="w-5 h-5 text-blue-600" /> Langkah 1: Foto Wajah Pasien
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Wajib melampirkan foto wajah pasien secara real-time untuk verifikasi kehadiran RME.
               </p>
             </div>
-            <div className="flex-1 flex flex-col items-center justify-center w-full">
+
+            <div className="w-full flex flex-col items-center justify-center">
               <input type="hidden" {...register('fotoWajah')} />
-              <div className="w-full max-w-sm">
+              <div className="w-full">
                 <WebcamCapture 
                   onCapture={(base64) => setValue('fotoWajah', base64 || '', { shouldValidate: true })}
                   error={errors.fotoWajah?.message}
                 />
               </div>
             </div>
-          </div>
 
-          {/* Card Opsi Tanda Tangan / Cap Jari */}
-          <div className="bg-white border border-gray-200 rounded-none p-6 shadow-sm flex flex-col h-full">
-            <div>
-              <h3 className="text-md font-semibold text-gray-900 mb-1">Bukti Persetujuan *</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Pilih metode persetujuan yang nyaman bagi pasien atau wali.
+            {/* Action Bar Lanjut ke Step 2 */}
+            <div className="w-full mt-6 pt-4 border-t border-slate-100 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setInnerStep(2)}
+                disabled={!fotoWajah}
+                className={`px-5 py-2.5 text-sm font-semibold text-white flex items-center gap-2 transition-all rounded-none shadow-xs ${
+                  fotoWajah ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer' : 'bg-slate-300 cursor-not-allowed'
+                }`}
+              >
+                Lanjut ke Langkah 2 <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* === CONTENT INNER STEP 2: BUKTI PERSETUJUAN (TANDA TANGAN / CAP JARI) === */}
+        {innerStep === 2 && (
+          <div className="bg-white border border-slate-200 p-6 shadow-xs w-full flex flex-col items-center animate-in fade-in duration-300">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center justify-center gap-2">
+                <PenTool className="w-5 h-5 text-blue-600" /> Langkah 2: Bukti Persetujuan Pasien
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Pilih metode bukti persetujuan digital pasien atau wali pasien.
               </p>
-              
-              <div className="flex flex-wrap gap-3 mb-6">
-                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-900 bg-gray-50 border border-gray-200 px-4 py-2.5 rounded-none hover:bg-gray-100 transition-colors w-full sm:w-auto">
-                  <input 
-                    type="radio" 
-                    value="Tanda Tangan" 
-                    {...register('metodePersetujuan')} 
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
-                  />
-                  Tanda Tangan Digital
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-900 bg-gray-50 border border-gray-200 px-4 py-2.5 rounded-none hover:bg-gray-100 transition-colors w-full sm:w-auto">
-                  <input 
-                    type="radio" 
-                    value="Cap Jari" 
-                    {...register('metodePersetujuan')} 
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
-                  />
-                  Cap Jari
-                </label>
-              </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center w-full">
+            <div className="flex justify-center gap-3 my-4">
+              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-900 bg-slate-50 border border-slate-200 px-4 py-2 hover:bg-slate-100 transition-colors">
+                <input 
+                  type="radio" 
+                  value="Tanda Tangan" 
+                  {...register('metodePersetujuan')} 
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                />
+                Tanda Tangan Digital
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-900 bg-slate-50 border border-slate-200 px-4 py-2 hover:bg-slate-100 transition-colors">
+                <input 
+                  type="radio" 
+                  value="Cap Jari" 
+                  {...register('metodePersetujuan')} 
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500" 
+                />
+                Cap Jari
+              </label>
+            </div>
+
+            <div className="w-full flex justify-center mt-2">
               <div className="w-full max-w-sm">
                 {metodePersetujuan === 'Tanda Tangan' ? (
                   <>
@@ -145,19 +216,19 @@ export default function Step5Persetujuan({ register, errors, setValue, watch }: 
                 ) : (
                   <div className="w-full flex flex-col gap-2">
                     <div className="flex flex-row gap-4 w-full h-48">
-                      <div className="flex-1 bg-gray-50 border-2 border-dashed border-gray-300 rounded-none p-4 flex flex-col items-center justify-center text-center transition-colors hover:bg-gray-100">
+                      <div className="flex-1 bg-slate-50 border-2 border-dashed border-slate-300 p-4 flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100">
                         <Fingerprint className="w-10 h-10 text-blue-500 animate-pulse mb-2" />
-                        <p className="text-sm font-semibold text-gray-700">Telunjuk Kanan</p>
-                        <p className="text-xs text-gray-500 mb-4">Posisikan jari di alat scan</p>
-                        <button type="button" className="bg-blue-600 text-white text-xs px-4 py-2 rounded-none hover:bg-blue-700 transition-colors shadow-sm">
+                        <p className="text-sm font-semibold text-slate-700">Telunjuk Kanan</p>
+                        <p className="text-xs text-slate-500 mb-4">Posisikan jari di alat scan</p>
+                        <button type="button" className="bg-blue-600 text-white text-xs px-4 py-2 hover:bg-blue-700 transition-colors shadow-2xs">
                           Mulai Scan
                         </button>
                       </div>
-                      <div className="flex-1 bg-gray-50 border-2 border-dashed border-gray-300 rounded-none p-4 flex flex-col items-center justify-center text-center transition-colors hover:bg-gray-100">
-                        <Fingerprint className="w-10 h-10 text-gray-300 mb-2" />
-                        <p className="text-sm font-semibold text-gray-700">Telunjuk Kiri</p>
-                        <p className="text-xs text-gray-500 mb-4">Scan opsional (cadangan)</p>
-                        <button type="button" className="bg-gray-200 text-gray-600 text-xs px-4 py-2 rounded-none hover:bg-gray-300 transition-colors shadow-sm">
+                      <div className="flex-1 bg-slate-50 border-2 border-dashed border-slate-300 p-4 flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100">
+                        <Fingerprint className="w-10 h-10 text-slate-300 mb-2" />
+                        <p className="text-sm font-semibold text-slate-700">Telunjuk Kiri</p>
+                        <p className="text-xs text-slate-500 mb-4">Scan opsional (cadangan)</p>
+                        <button type="button" className="bg-slate-200 text-slate-600 text-xs px-4 py-2 hover:bg-slate-300 transition-colors shadow-2xs">
                           Mulai Scan
                         </button>
                       </div>
@@ -167,11 +238,27 @@ export default function Step5Persetujuan({ register, errors, setValue, watch }: 
                 )}
               </div>
             </div>
+
+            {/* Action Bar Kembali ke Step 1 */}
+            <div className="w-full mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setInnerStep(1)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                ← Kembali ke Langkah 1 (Foto Wajah)
+              </button>
+
+              <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium bg-emerald-50 border border-emerald-200 px-3 py-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Siap Disimpan
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="pt-6 mt-8 border-t border-gray-100">
+      {/* Metadata Sistem */}
+      <div className="pt-6 mt-6 border-t border-gray-100">
         <h3 className="text-xs font-semibold text-gray-400 mb-2 tracking-wider uppercase">Metadata Sistem (Otomatis)</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-400 bg-gray-50 p-4 rounded-none">
           <div>
