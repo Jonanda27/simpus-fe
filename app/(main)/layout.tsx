@@ -22,7 +22,8 @@ import {
   TestTubes,
   Wallet,
   HeartPulse,
-  AlertCircle
+  AlertCircle,
+  Radio
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -35,7 +36,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [role, setRole] = useState<'ADMINISTRASI' | 'PERAWAT' | 'DOKTER' | 'ADMIN' | 'APOTEKER' | 'LABORATORIUM' | 'KASIR' | 'PETUGAS_UKM'>('ADMINISTRASI');
+  const [role, setRole] = useState<'ADMINISTRASI' | 'PERAWAT' | 'DOKTER' | 'ADMIN' | 'APOTEKER' | 'LABORATORIUM' | 'RADIOLOGI' | 'KASIR' | 'PETUGAS_UKM'>('ADMINISTRASI');
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, checkSession, logout } = useAuthStore();
@@ -49,7 +50,7 @@ export default function DashboardLayout({
       }
       
       if (state.user?.role) {
-        setRole(state.user.role);
+        setRole(state.user.role as any);
       }
     });
   }, [checkSession, router]);
@@ -196,8 +197,6 @@ export default function DashboardLayout({
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Screening & Triage</span>
               </Link>
 
-
-
               <Link href="/dokter/rawat-jalan" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/dokter/rawat-jalan' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                 <Stethoscope className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/dokter/rawat-jalan' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Input RME Dokter</span>
@@ -209,6 +208,7 @@ export default function DashboardLayout({
               </Link>
             </>
           )}
+
           {/* Menu Khusus Dokter */}
           {role === 'DOKTER' && (
             <>
@@ -302,6 +302,14 @@ export default function DashboardLayout({
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Antrean Uji Lab</span>
               </Link>
             </>
+          )}
+
+          {/* Menu Khusus RADIOLOGI */}
+          {(role === 'ADMIN' || role === 'DOKTER' || role === 'RADIOLOGI') && (
+            <Link href="/radiologi" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/radiologi' ? 'text-purple-700 bg-purple-50 border-r-4 border-purple-600' : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'}`}>
+              <Radio className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/radiologi' ? 'text-purple-600' : 'text-gray-400 md:group-hover:text-purple-600'}`} />
+              <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Unit Radiologi</span>
+            </Link>
           )}
 
           {/* Menu Khusus KASIR */}

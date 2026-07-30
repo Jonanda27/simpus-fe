@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Stethoscope, User, FileText, Activity, Syringe, Pill, 
   ClipboardList, CheckCircle2, Clock, Users, Search, Loader2, RefreshCw, TestTubes, Printer,
-  FileDown, AlertTriangle
+  FileDown, AlertTriangle, Radio
 } from 'lucide-react';
 import { icd9Service } from '@/services/icd9.service';
 import { laboratoriumService } from '@/services/laboratorium.service';
@@ -19,6 +19,7 @@ import TabObjektif from './components/TabObjektif';
 import TabAsesmen from './components/TabAsesmen';
 import TabPlan from './components/TabPlan';
 import TabLaboratorium from './components/TabLaboratorium';
+import TabRadiologi from './components/TabRadiologi';
 import TabTindakan from './components/TabTindakan';
 import TabResep from './components/TabResep';
 import TabRujukan from './components/TabRujukan';
@@ -27,6 +28,8 @@ import RiwayatRMEModal from './components/RiwayatRMEModal';
 import LabResultModal from './components/LabResultModal';
 import DoctorActionBar from './components/DoctorActionBar';
 import DischargePlanning from './components/DischargePlanning';
+import SupportOverlayBanner from './components/SupportOverlayBanner';
+import SoapTabBar from './components/SoapTabBar';
 import { useReactToPrint } from 'react-to-print';
 import { CetakHasilLab } from '@/components/laboratorium/CetakHasilLab';
 
@@ -430,6 +433,7 @@ export default function DokterRawatJalanPage() {
     { id: 'SOAP_A', label: 'A (Asesmen & Diagnosa)', icon: <FileText className="w-4 h-4 mr-2" /> },
     { id: 'SOAP_P', label: 'P (Plan)', icon: <ClipboardList className="w-4 h-4 mr-2" /> },
     { id: 'LABORATORIUM', label: 'Laboratorium', icon: <TestTubes className="w-4 h-4 mr-2" /> },
+    { id: 'RADIOLOGI', label: 'Radiologi', icon: <Radio className="w-4 h-4 mr-2" /> },
     { id: 'TINDAKAN', label: 'Tindakan Medis', icon: <Activity className="w-4 h-4 mr-2" /> },
   ];
 
@@ -455,67 +459,36 @@ export default function DokterRawatJalanPage() {
             {/* Header Pasien */}
             <PatientHeader 
               selectedKunjungan={selectedKunjungan} 
+              screeningData={screeningData}
+              alergiList={alergiList}
               getAge={getAge} 
               setIsScreeningModalOpen={setIsScreeningModalOpen} 
               setIsRiwayatModalOpen={setIsRiwayatModalOpen}
             />
 
-            {/* Loading Overlay */}
-            {isLoadingRekamMedis && (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">Memuat rekam medis...</p>
-                </div>
-              </div>
-            )}
-
-            {!isLoadingRekamMedis && selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB' && isViewingLabOverlay && (
-              <div className="flex-1 flex items-center justify-center bg-gray-100/50 p-8">
-                <div className="bg-white p-10 shadow-md text-center max-w-md border-t-[6px] border-yellow-400 rounded-sm">
-                  <TestTubes className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                  <h2 className="text-2xl font-black text-slate-800 mb-2">Menunggu Hasil Lab</h2>
-                  <p className="text-slate-600 font-medium mb-8 text-sm leading-relaxed">
-                    Pasien ini sedang diarahkan ke ruang Laboratorium. Semua pengisian SOAP, Diagnosa, dan Tindakan akan <b>dinonaktifkan sementara</b> hingga hasil laboratorium dikirimkan kembali ke Anda.
-                  </p>
-                  <button 
-                    onClick={() => setIsViewingLabOverlay(false)}
-                    className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-8 rounded-none shadow-sm transition-colors w-full"
-                  >
-                    Lihat Data Rekam Medis
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Status Banner Penunjang & Loading Overlay Component */}
+            <SupportOverlayBanner 
+              isLoadingRekamMedis={isLoadingRekamMedis}
+              selectedKunjungan={selectedKunjungan}
+              isViewingLabOverlay={isViewingLabOverlay}
+              setIsViewingLabOverlay={setIsViewingLabOverlay}
+              fetchAntrian={fetchAntrian}
+            />
 
             {!isLoadingRekamMedis && selectedKunjungan.statusKunjungan !== 'MENUNGGU_LAB' && fase === 2 && (
               <DischargePlanning />
             )}
 
-            {!isLoadingRekamMedis && (selectedKunjungan.statusKunjungan !== 'MENUNGGU_LAB' || !isViewingLabOverlay) && fase === 1 && (
+            {!isLoadingRekamMedis && 
+             (selectedKunjungan.statusKunjungan !== 'MENUNGGU_LAB' && selectedKunjungan.statusKunjungan !== 'MENUNGGU_RADIOLOGI' || !isViewingLabOverlay) && 
+             fase === 1 && (
               <>
-                {/* Form Tabs */}
-                <div 
-                  ref={scrollContainerRef}
-                  className="flex overflow-x-auto border-b border-gray-200 bg-white shadow-sm z-10 w-full scrollbar-hide" 
-                  style={{scrollbarWidth: 'none'}}
-                >
-                  {tabs.map((tab) => (
-                    <button 
-                      key={tab.id}
-                      data-active={activeTab === tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex-shrink-0 flex items-center px-6 py-4 text-sm font-bold border-b-2 transition-colors ${
-                        activeTab === tab.id 
-                          ? 'border-indigo-600 text-indigo-700 bg-indigo-50/30' 
-                          : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                    >
-                      {tab.icon}
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+                {/* Form Tabs Component */}
+                <SoapTabBar 
+                  activeTab={activeTab} 
+                  setActiveTab={setActiveTab} 
+                  scrollContainerRef={scrollContainerRef} 
+                />
 
                 {/* Tab Content */}
                 <fieldset disabled={selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'} className="contents">
@@ -566,6 +539,14 @@ export default function DokterRawatJalanPage() {
                         clearSelection={clearSelection} 
                         fetchAntrian={fetchAntrian} 
                         setActiveTab={setActiveTab} 
+                      />
+                    )}
+
+                    {/* TAB: Order Radiologi */}
+                    {activeTab === 'RADIOLOGI' && (
+                      <TabRadiologi 
+                        kunjunganId={selectedKunjungan.id}
+                        isPoliGigi={Boolean(selectedKunjungan?.poliklinik?.namaPoli?.toLowerCase().includes('gigi'))}
                       />
                     )}
 
