@@ -64,6 +64,49 @@ export default function ScreeningModal({
                   </div>
                 </div>
               </div>
+              {/* Skrining Tambahan Poli Gigi (Jika ada) */}
+              {screeningData.dataTambahan?.gigi && (
+                <div className="bg-blue-50/60 border border-blue-200 p-5 rounded-none mb-6 shadow-sm space-y-4">
+                  <p className="text-xs font-black text-blue-900 uppercase tracking-wider border-b border-blue-200 pb-2">
+                    Skrining Khusus Poli Gigi & Mulut (Standar Kemenkes SATUSEHAT)
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white p-2.5 border border-blue-100 rounded-none text-center">
+                      <span className="block text-[10px] font-bold text-gray-500 uppercase">Gol. Darah / Rhesus</span>
+                      <span className="block text-sm font-extrabold text-blue-900">
+                        {screeningData.dataTambahan.gigi.golonganDarah || '-'} ({screeningData.dataTambahan.gigi.rhesus || '-'})
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 border border-blue-100 rounded-none text-center">
+                      <span className="block text-[10px] font-bold text-gray-500 uppercase">Status Kehamilan</span>
+                      <span className="block text-sm font-extrabold text-blue-900">
+                        {screeningData.dataTambahan.gigi.statusKehamilan || '-'}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 border border-blue-100 rounded-none text-center">
+                      <span className="block text-[10px] font-bold text-gray-500 uppercase">Skor & Interpretasi OHIS</span>
+                      <span className="block text-sm font-extrabold text-blue-900">
+                        {screeningData.dataTambahan.gigi.skorOhis !== null ? `${screeningData.dataTambahan.gigi.skorOhis} - ${screeningData.dataTambahan.gigi.interpretasiOhis || ''}` : '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="bg-white p-2.5 border border-blue-100">
+                      <span className="block font-bold text-gray-500 uppercase text-[10px]">Alergi Bius Lokal (Anestesi):</span>
+                      <span className="font-extrabold text-slate-800">{screeningData.dataTambahan.gigi.riwayatAlergiAnestesi || 'Tidak Ada'}</span>
+                    </div>
+                    <div className="bg-white p-2.5 border border-blue-100">
+                      <span className="block font-bold text-gray-500 uppercase text-[10px]">Obat Pengencer Darah:</span>
+                      <span className="font-extrabold text-slate-800">{screeningData.dataTambahan.gigi.riwayatPengencerDarah || 'Tidak Ada'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Keluhan Utama (Anamnesis Perawat)</label>
                 <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-none text-gray-700 min-h-[60px] text-sm">

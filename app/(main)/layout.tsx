@@ -65,18 +65,18 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gray-50 flex">
       
       {/* Sidebar Placeholder (Reserves horizontal space for the mini sidebar on desktop) */}
-      <div className="w-20 flex-shrink-0 hidden md:block"></div>
+      <div className="w-20 flex-shrink-0 hidden md:block print:hidden"></div>
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 md:hidden transition-opacity print:hidden"
           onClick={closeMobileMenu}
         />
       )}
 
       {/* Mini-to-Full Collapsible Sidebar (Desktop) & Off-canvas Drawer (Mobile) */}
-      <aside className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 flex flex-col transition-all duration-300 ease-in-out overflow-hidden shadow-sm md:hover:shadow-2xl group
+      <aside className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 flex flex-col transition-all duration-300 ease-in-out overflow-hidden shadow-sm md:hover:shadow-2xl group print:hidden
         ${isMobileMenuOpen ? 'w-64 translate-x-0' : '-translate-x-full w-64'} 
         md:translate-x-0 md:w-20 md:hover:w-64`}>
         
@@ -114,6 +114,11 @@ export default function DashboardLayout({
               <Link href="/administrasi/monitoring-encounter" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                 <Activity className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Monitoring FHIR</span>
+              </Link>
+
+              <Link href="/administrasi/antrian-rujukan" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/administrasi/antrian-rujukan' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <FileText className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/administrasi/antrian-rujukan' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Antrean Rujukan</span>
               </Link>
 
               <Link href="#" className="flex items-center px-6 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors">
@@ -166,19 +171,14 @@ export default function DashboardLayout({
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Master Obat</span>
               </Link>
 
-              <Link href="/administrasi/monitoring-encounter" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
-                <Activity className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
-                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Monitoring FHIR</span>
-              </Link>
-
               <Link href="/admin/master-alergi" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/master-alergi' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                 <AlertCircle className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/admin/master-alergi' ? 'text-red-600' : 'text-gray-400 md:group-hover:text-red-600'}`} />
                 <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Master Alergi</span>
               </Link>
 
-              <Link href="/admin/satusehat-monitoring" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/admin/satusehat-monitoring' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
-                <Activity className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/admin/satusehat-monitoring' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
-                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Monitoring SATUSEHAT</span>
+              <Link href="/administrasi/monitoring-encounter" onClick={closeMobileMenu} className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'}`}>
+                <Activity className={`w-7 h-7 flex-shrink-0 transition-colors ${pathname === '/administrasi/monitoring-encounter' ? 'text-blue-600' : 'text-gray-400 md:group-hover:text-blue-600'}`} />
+                <span className="ml-4 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 whitespace-nowrap">Monitoring FHIR</span>
               </Link>
             </>
           )}
@@ -373,7 +373,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10 sticky top-0">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10 sticky top-0 print:hidden">
           <div className="flex-1 flex items-center">
             
             {/* Hamburger Menu (Mobile/Tablet Only) */}

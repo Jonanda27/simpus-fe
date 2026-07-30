@@ -70,7 +70,7 @@ export default function Step2Triage({ register, errors, watch, setValue }: Step2
                 key={opt.value}
                 type="button"
                 onClick={() => setValue('kategoriTriage', opt.value as any, { shouldValidate: true })}
-                className={`flex flex-col p-4 rounded-xl border text-left transition-all duration-300 ${opt.colorClass} ${
+                className={`flex flex-col p-4 rounded-none border text-left transition-all duration-300 ${opt.colorClass} ${
                   isSelected ? opt.activeClass : opt.inactiveClass
                 }`}
               >
@@ -88,12 +88,12 @@ export default function Step2Triage({ register, errors, watch, setValue }: Step2
       </div>
 
       {/* Primary Assessment */}
-      <div className="bg-white p-6 border border-gray-200 shadow-sm rounded-xl">
+      <div className="bg-white p-6 border border-gray-200 shadow-sm rounded-none">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Penilaian Primer (Primary Survey)</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Airway (Jalan Napas)</label>
-            <select {...register('jalanNapas')} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+            <select {...register('jalanNapas')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
               <option value="">Pilih kondisi...</option>
               <option value="Bebas">Bebas / Clear</option>
               <option value="Gargling">Gargling (Cairan)</option>
@@ -103,7 +103,7 @@ export default function Step2Triage({ register, errors, watch, setValue }: Step2
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Circulation (Sirkulasi)</label>
-            <select {...register('sirkulasi')} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+            <select {...register('sirkulasi')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
               <option value="">Pilih kondisi...</option>
               <option value="Normal">Normal (CRT &lt; 2 dtk)</option>
               <option value="Pucat">Pucat / Akral Dingin</option>
@@ -113,7 +113,7 @@ export default function Step2Triage({ register, errors, watch, setValue }: Step2
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Disability (Kesadaran)</label>
-            <select {...register('kesadaran')} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
+            <select {...register('kesadaran')} className="w-full px-4 py-2.5 rounded-none border border-gray-300 focus:ring-2 focus:ring-blue-500 text-black">
               <option value="">Pilih kondisi...</option>
               <option value="Alert">Alert (Sadar Penuh)</option>
               <option value="Verbal">Verbal (Respon Panggilan)</option>

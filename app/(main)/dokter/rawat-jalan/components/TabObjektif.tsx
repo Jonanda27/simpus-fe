@@ -1,19 +1,22 @@
 import React, { Dispatch, SetStateAction } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Stethoscope } from 'lucide-react';
 import { SOAPPayload } from '@/types/rawatJalan.types';
+import OdontogramChart from './OdontogramChart';
 
 interface TabObjektifProps {
   soapData: SOAPPayload;
   setSoapData: Dispatch<SetStateAction<SOAPPayload>>;
   setActiveTab: (tab: string) => void;
   openLabModal: () => void;
+  isPoliGigi?: boolean;
 }
 
 export default function TabObjektif({
   soapData,
   setSoapData,
   setActiveTab,
-  openLabModal
+  openLabModal,
+  isPoliGigi,
 }: TabObjektifProps) {
   return (
     <div className="p-8 space-y-6">
@@ -21,6 +24,30 @@ export default function TabObjektif({
         <FileText className="w-6 h-6 text-blue-600" />
         O - Objektif (Pemeriksaan Fisik & Penunjang)
       </h3>
+
+      {/* ODONTOGRAM CHART UNTUK POLI GIGI & MULUT */}
+      {isPoliGigi && (
+        <div className="mb-6">
+          <OdontogramChart
+            value={soapData.odontogram}
+            oralFindings={soapData.oralFindings}
+            onChange={(odontogramMap, dmft) => {
+              setSoapData((prev) => ({
+                ...prev,
+                odontogram: odontogramMap,
+                dmft: dmft,
+              }));
+            }}
+            onOralFindingsChange={(findings) => {
+              setSoapData((prev) => ({
+                ...prev,
+                oralFindings: findings,
+              }));
+            }}
+          />
+        </div>
+      )}
+
       <div className="bg-blue-50/30 p-6 border border-blue-100 rounded-none">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

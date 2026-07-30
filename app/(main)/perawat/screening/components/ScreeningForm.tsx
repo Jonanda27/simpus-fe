@@ -40,7 +40,9 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
     defaultValues: {
       nomorRegistrasi: kunjungan.noAntrian || '1',
       jenisKedatangan: 'Poli',
-      usia: new Date().getFullYear() - new Date(kunjungan.pasien.tanggalLahir).getFullYear() || 30,
+      golonganDarah: kunjungan.pasien?.golonganDarah || '',
+      rhesus: kunjungan.pasien?.rhesus === '+' || kunjungan.pasien?.rhesus === 'Positif (+)' ? '+' : (kunjungan.pasien?.rhesus === '-' || kunjungan.pasien?.rhesus === 'Negatif (-)' ? '-' : ''),
+      statusKehamilan: kunjungan.pasien?.jenisKelamin === 'L' ? 'Tidak Berlaku' : '',
       riwayatKeluarga: [],
       faktorRisikoLain: [],
       ptmJantung: [],
@@ -190,6 +192,16 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
       prioritasPelayanan: data.prioritasPelayanan,
       tindakLanjut: data.tindakLanjut || [],
       catatanPetugas: toTitleCase(data.catatanPetugas),
+      // Poli Gigi & Mulut Fields (SATUSEHAT & OHIS)
+      golonganDarah: data.golonganDarah,
+      rhesus: data.rhesus,
+      statusKehamilan: data.statusKehamilan,
+      debrisIndex: data.debrisIndex,
+      kalkulusIndex: data.kalkulusIndex,
+      skorOhis: data.skorOhis,
+      interpretasiOhis: data.interpretasiOhis,
+      riwayatAlergiAnestesi: toTitleCase(data.riwayatAlergiAnestesi),
+      riwayatPengencerDarah: toTitleCase(data.riwayatPengencerDarah),
     };
 
     try {
@@ -225,6 +237,18 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
     setValue('riwayatRawatInap', 'Pernah dirawat inap karena Thypoid 2 tahun lalu.');
     setValue('riwayatTransfusi', 'Tidak pernah transfusi darah.');
     setValue('riwayatPengobatan', 'Paracetamol 500mg 3x1 tablet (membeli bebas di apotek 2 hari lalu)');
+    
+    // Poli Gigi Dummy Fields
+    setValue('golonganDarah', kunjungan.pasien?.golonganDarah || 'O');
+    setValue('rhesus', kunjungan.pasien?.rhesus || 'Positif (+)');
+    setValue('statusKehamilan', 'Tidak Hamil');
+    setValue('debrisIndex', 1.2);
+    setValue('kalkulusIndex', 0.8);
+    setValue('skorOhis', 2.0);
+    setValue('interpretasiOhis', 'Sedang');
+    setValue('riwayatAlergiAnestesi', 'Tidak Ada');
+    setValue('riwayatPengencerDarah', 'Tidak Ada');
+
     setValue('tinggiBadan', 168);
     setValue('beratBadan', 65);
     setValue('lingkarPerut', 78);
@@ -399,7 +423,13 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
         })}>
         <div className="min-h-[400px]">
           <div className={currentStep === 1 ? 'block' : 'hidden'}>
-            <Step1Umum register={register} errors={errors} watch={watch} setValue={setValue} />
+            <Step1Umum 
+              register={register} 
+              errors={errors} 
+              watch={watch} 
+              setValue={setValue} 
+              isPoliGigi={Boolean(kunjungan?.poliklinik?.namaPoli?.toLowerCase().includes('gigi'))}
+            />
           </div>
           <div className={currentStep === 2 && !shouldSkipTriage ? 'block' : 'hidden'}>
             <Step2Triage register={register} errors={errors} watch={watch} setValue={setValue} />
@@ -424,7 +454,7 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1 || isSubmitting}
-            className={`inline-flex items-center px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+            className={`inline-flex items-center px-5 py-2.5 rounded-none font-medium text-sm transition-colors ${
               currentStep === 1 
                 ? 'text-gray-300 cursor-not-allowed bg-gray-50' 
                 : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 shadow-sm'
@@ -438,7 +468,7 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
             <button
               type="button"
               onClick={nextStep}
-              className="inline-flex items-center px-6 py-2.5 rounded-xl font-medium text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-6 py-2.5 rounded-none font-medium text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Selanjutnya
               <ChevronRight className="w-5 h-5 ml-1" />
@@ -447,7 +477,7 @@ export default function ScreeningForm({ kunjungan }: { kunjungan: Kunjungan }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center px-8 py-2.5 rounded-xl font-medium text-sm text-white bg-green-600 hover:bg-green-700 shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70"
+              className="inline-flex items-center px-8 py-2.5 rounded-none font-medium text-sm text-white bg-green-600 hover:bg-green-700 shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70"
             >
               {isSubmitting ? 'Menyimpan...' : 'Simpan Hasil Screening'}
             </button>

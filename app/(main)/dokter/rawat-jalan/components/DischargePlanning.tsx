@@ -108,18 +108,19 @@ export default function DischargePlanning() {
     }
     setIsSubmitting(true);
     try {
-      // Print dahulu
-      window.print();
-
-      // Simpan ke database
+      // Simpan data rujukan ke DB lokal (tabel RujukanKeluar) + generate tagihan + kirim Bundle SATUSEHAT
       await simpanRujukan({
         faskesTujuan: rujukanData.tujuanRS,
         poliTujuan: rujukanData.tujuanPoli,
+        dokterTujuan: rujukanData.tujuanDokter,
         alasanRujukan: rujukanData.anamnesa + '\n' + rujukanData.diagnosaSementara,
       });
-      Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Rujukan berhasil dibuat. Kunjungan Selesai!', timer: 2000, showConfirmButton: false });
+
+      // Tampilkan pesan sukses — cetak surat dilakukan oleh Administrasi di loket
+      Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Rujukan berhasil disimpan. Pasien silakan menuju loket administrasi untuk cetak surat rujukan.', timer: 3000, showConfirmButton: false });
     } catch (e) {
       console.error(e);
+      Swal.fire('Error', 'Gagal menyimpan data rujukan', 'error');
     } finally {
       setIsSubmitting(false);
     }

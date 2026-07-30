@@ -22,8 +22,9 @@ const MANIFESTASI_OPTIONS = [
 export default function TabSubjektif({
   soapData,
   setSoapData,
-  setActiveTab
-}: TabSubjektifProps) {
+  setActiveTab,
+  screeningData
+}: TabSubjektifProps & { screeningData?: any }) {
   const [masterAlergis, setMasterAlergis] = useState<any[]>([]);
   const [selectedAlergenId, setSelectedAlergenId] = useState('');
   const [selectedManifestasiKode, setSelectedManifestasiKode] = useState('');
@@ -71,8 +72,52 @@ export default function TabSubjektif({
     });
   };
 
+  const gigiData = screeningData?.dataTambahan?.gigi;
+
   return (
     <div className="p-8 space-y-6">
+      {/* CARD ALERT SKRINING POLI GIGI (DOKTER DIRECT READ) */}
+      {gigiData && (
+        <div className="bg-blue-50 border-2 border-blue-600 p-5 rounded-none space-y-3 shadow-sm">
+          <div className="flex items-center justify-between border-b border-blue-200 pb-2">
+            <h4 className="font-black text-blue-900 text-sm flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-blue-700" />
+              Ringkasan Skrining Gigi Perawat (Tindakan Safety Check)
+            </h4>
+            <span className="bg-blue-700 text-white font-black text-[10px] uppercase px-2 py-0.5">Poli Gigi</span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div className="bg-white p-2.5 border border-blue-200">
+              <span className="block text-[10px] text-gray-500 font-bold uppercase">Gol. Darah & Rhesus</span>
+              <span className="font-extrabold text-blue-950 text-sm">{gigiData.golonganDarah || '-'} ({gigiData.rhesus || '-'})</span>
+            </div>
+
+            <div className="bg-white p-2.5 border border-blue-200">
+              <span className="block text-[10px] text-gray-500 font-bold uppercase">Status Kehamilan</span>
+              <span className={`font-extrabold text-sm ${gigiData.statusKehamilan === 'Hamil' ? 'text-red-600' : 'text-slate-800'}`}>
+                {gigiData.statusKehamilan || '-'}
+              </span>
+            </div>
+
+            <div className="bg-white p-2.5 border border-blue-200">
+              <span className="block text-[10px] text-gray-500 font-bold uppercase">Kebersihan Gigi (OHIS)</span>
+              <span className="font-extrabold text-slate-950 text-sm">
+                {gigiData.skorOhis !== null ? `${gigiData.skorOhis} (${gigiData.interpretasiOhis || ''})` : '-'}
+              </span>
+            </div>
+
+            <div className="bg-white p-2.5 border border-blue-200">
+              <span className="block text-[10px] text-gray-500 font-bold uppercase">Alergi Bius / Pengencer</span>
+              <span className="font-extrabold text-red-600 text-xs block truncate">
+                {gigiData.riwayatAlergiAnestesi !== 'Tidak Ada' ? `Bius: ${gigiData.riwayatAlergiAnestesi}` : ''}
+                {gigiData.riwayatPengencerDarah !== 'Tidak Ada' ? ` | Pengencer: ${gigiData.riwayatPengencerDarah}` : ''}
+                {gigiData.riwayatAlergiAnestesi === 'Tidak Ada' && gigiData.riwayatPengencerDarah === 'Tidak Ada' ? 'Aman / Tidak Ada' : ''}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
       <h3 className="text-xl font-extrabold text-gray-900 mb-6 flex items-center gap-2 border-b pb-3">
         <FileText className="w-6 h-6 text-blue-600" />
         S - Subjektif (Anamnesis)

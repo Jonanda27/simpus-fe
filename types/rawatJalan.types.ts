@@ -58,6 +58,9 @@ export interface RekamMedis {
   kesadaran?: string | null;
   pemeriksaanFisik?: string | null;
   hasilPenunjang?: string | null;
+  odontogram?: any;
+  dmft?: any;
+  oralFindings?: any;
 
   // A - Asesmen
   diagnosisKlinis?: string | null;
@@ -89,6 +92,19 @@ export interface SOAPPayload {
   rencanaTerapi?: string;
   instruksiMedis?: string;
   tujuanPerawatan?: string;
+  
+  // Poli Gigi Fields (Odontogram & DMF-T)
+  odontogram?: Record<number, any>;
+  dmft?: { d: number; m: number; f: number; total: number };
+  oralFindings?: {
+    occlusi?: string;
+    torusPalatinus?: string;
+    torusMandibularis?: string;
+    palatum?: string;
+    diastema?: string;
+    gigiAnomali?: string;
+    kondisiLain?: string;
+  };
 }
 
 /** Alergi yang dipilih dokter */

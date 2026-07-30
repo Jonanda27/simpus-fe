@@ -28,9 +28,29 @@ export default function MonitoringEncounterPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // Modal State
+  // Modal State & Complete List of All FHIR APIs Created in Backend
   const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
   const [activeTabResource, setActiveTabResource] = useState<string>('Encounter');
+  
+  const FHIR_RESOURCES = [
+    { id: 'Encounter', label: 'Encounter (Kunjungan)' },
+    { id: 'Condition', label: 'Condition (Diagnosa ICD-10)' },
+    { id: 'Observation', label: 'Observation (TTV & Fisik)' },
+    { id: 'ClinicalImpression', label: 'ClinicalImpression (Asesmen)' },
+    { id: 'ServiceRequest', label: 'ServiceRequest (Surat Rujukan / Order)' },
+    { id: 'Composition', label: 'Composition (Ringkasan RME)' },
+    { id: 'Procedure', label: 'Procedure (Tindakan Medis)' },
+    { id: 'AllergyIntolerance', label: 'AllergyIntolerance (Riwayat Alergi)' },
+    { id: 'MedicationStatement', label: 'MedicationStatement (Pengobatan)' },
+    { id: 'MedicationRequest', label: 'MedicationRequest (Resep Obat)' },
+    { id: 'MedicationDispense', label: 'MedicationDispense (Penyerahan Obat)' },
+    { id: 'QuestionnaireResponse', label: 'QuestionnaireResponse (Skrining)' },
+    { id: 'FamilyMemberHistory', label: 'FamilyMemberHistory (Riwayat Keluarga)' },
+    { id: 'Goal', label: 'Goal (Tujuan Perawatan)' },
+    { id: 'Specimen', label: 'Specimen (Sampel Lab)' },
+    { id: 'RelatedPerson', label: 'RelatedPerson (Penanggung Jawab)' }
+  ];
+
   const [encounterDetail, setEncounterDetail] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -81,9 +101,13 @@ export default function MonitoringEncounterPage() {
     }
   };
 
-  const handleInspectEncounter = async (encounterId: string) => {
+  // Dynamic Active Resource Tabs for Selected Item
+  const [activeItemHitList, setActiveItemHitList] = useState<string[]>([]);
+
+  const handleInspectEncounter = (encounterId: string, itemHitList?: string[]) => {
     setSelectedEncounterId(encounterId);
     setActiveTabResource('Encounter');
+    setActiveItemHitList(itemHitList || ['Encounter']);
     fetchResourceData('Encounter', encounterId);
   };
 
@@ -141,7 +165,18 @@ export default function MonitoringEncounterPage() {
       nik.toLowerCase().includes(searchTerm.toLowerCase());
 
     const syncStatus = item.satusehat_sync_status || 'PENDING';
-    const matchesStatus = statusFilter === 'ALL' || syncStatus === statusFilter;
+    const encounterStatus = item.encounterStatus === 'finished' || item.statusKunjungan === 'SELESAI' ? 'FINISHED' : 'IN_PROGRESS';
+
+    let matchesStatus = true;
+    if (statusFilter === 'ALL') {
+      matchesStatus = true;
+    } else if (statusFilter === 'FINISHED') {
+      matchesStatus = encounterStatus === 'FINISHED';
+    } else if (statusFilter === 'IN_PROGRESS') {
+      matchesStatus = encounterStatus === 'IN_PROGRESS';
+    } else {
+      matchesStatus = syncStatus === statusFilter;
+    }
 
     return matchesSearch && matchesStatus;
   });
@@ -155,7 +190,7 @@ export default function MonitoringEncounterPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2.5">
               <Activity className="w-7 h-7 text-blue-600" />
-              Monitoring Interoperabilitas SATUSEHAT (FHIR R4)
+              Monitoring Interoperabilitas SATUSEHAT 
             </h1>
             <p className="text-sm text-gray-500 mt-1 font-medium">
               Inspeksi real-time transaksi Encounter, Observation, Condition, ClinicalImpression & Goal ke Kemenkes RI Sandbox
@@ -190,10 +225,11 @@ export default function MonitoringEncounterPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-none text-xs font-bold text-gray-700 focus:ring-2 focus:ring-blue-500"
             >
-              <option value="ALL">Semua Status Sync</option>
-              <option value="SUCCESS">SUCCESS</option>
-              <option value="PENDING">PENDING</option>
-              <option value="FAILED">FAILED</option>
+              <option value="ALL">Semua Status Kunjungan</option>
+              <option value="FINISHED">Encounter FINISHED</option>
+              <option value="IN_PROGRESS">Encounter IN-PROGRESS</option>
+              <option value="SUCCESS">Sync SUCCESS</option>
+              <option value="FAILED">Sync FAILED</option>
             </select>
           </div>
         </div>
@@ -206,8 +242,9 @@ export default function MonitoringEncounterPage() {
                 <tr className="bg-gray-100/80 border-b border-gray-200 font-extrabold text-gray-700">
                   <th className="px-6 py-4">Pasien</th>
                   <th className="px-6 py-4">Poliklinik & Dokter</th>
-                  <th className="px-6 py-4">Waktu Registrasi</th>
+                  <th className="px-6 py-4">Status Encounter</th>
                   <th className="px-6 py-4">Encounter ID (SATUSEHAT)</th>
+                  <th className="px-6 py-4">Total API Ter-Hit</th>
                   <th className="px-6 py-4">Status Sync</th>
                   <th className="px-6 py-4 text-center">Aksi / Inspeksi</th>
                 </tr>
@@ -215,14 +252,14 @@ export default function MonitoringEncounterPage() {
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-gray-400">
+                    <td colSpan={7} className="text-center py-12 text-gray-400">
                       <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
                       Memuat data encounter...
                     </td>
                   </tr>
                 ) : filteredList.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-gray-400">
+                    <td colSpan={7} className="text-center py-12 text-gray-400">
                       Tidak ada data kunjungan yang cocok.
                     </td>
                   </tr>
@@ -231,6 +268,7 @@ export default function MonitoringEncounterPage() {
                     const encounterId = item.encounterId;
                     const isSuccess = item.satusehat_sync_status === 'SUCCESS';
                     const isFailed = item.satusehat_sync_status === 'FAILED';
+                    const isFinished = item.encounterStatus === 'finished' || item.statusKunjungan === 'SELESAI';
 
                     return (
                       <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
@@ -254,13 +292,17 @@ export default function MonitoringEncounterPage() {
                           </div>
                         </td>
 
-                        {/* Waktu Registrasi */}
-                        <td className="px-6 py-4 text-xs text-gray-600 font-mono">
-                          <div className="flex items-center gap-1 font-medium">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            {item.tanggalRegistrasi ? new Date(item.tanggalRegistrasi).toLocaleDateString('id-ID') : '-'}
-                          </div>
-                          <div className="text-gray-400 mt-0.5">{item.jamRegistrasi || '-'} WIB</div>
+                        {/* Status Encounter (finished / in-progress) */}
+                        <td className="px-6 py-4 font-mono text-xs">
+                          {isFinished ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-none text-xs font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> FINISHED
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-none text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                              <Clock className="w-3.5 h-3.5" /> IN-PROGRESS
+                            </span>
+                          )}
                         </td>
 
                         {/* Encounter ID */}
@@ -272,6 +314,15 @@ export default function MonitoringEncounterPage() {
                           ) : (
                             <span className="text-gray-400 italic">Belum Diterbitkan</span>
                           )}
+                        </td>
+
+                        {/* Total API Ter-Hit */}
+                        <td className="px-6 py-4 font-mono text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2.5 py-0.5 bg-slate-900 text-emerald-400 font-bold rounded-none text-xs">
+                              {item.fhirApiHitsCount || (encounterId ? 1 : 0)} API
+                            </span>
+                          </div>
                         </td>
 
                         {/* Status Sync */}
@@ -315,7 +366,7 @@ export default function MonitoringEncounterPage() {
 
                             {encounterId ? (
                               <button
-                                onClick={() => handleInspectEncounter(encounterId)}
+                                onClick={() => handleInspectEncounter(encounterId, item.fhirApiHitList)}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-none transition-all shadow-sm"
                               >
                                 <Eye className="w-3.5 h-3.5" /> Lihat Live FHIR
@@ -388,19 +439,9 @@ export default function MonitoringEncounterPage() {
                 }}
                 className="flex-1 flex gap-2 overflow-x-auto py-1 px-2 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               >
-                {[
-                  { id: 'Encounter', num: '01', label: 'Encounter' },
-                  { id: 'Observation', num: '02', label: 'Observation (TTV/Fisik)' },
-                  { id: 'Condition', num: '03', label: 'Condition (Diagnosa)' },
-                  { id: 'ClinicalImpression', num: '04', label: 'ClinicalImpression' },
-                  { id: 'Goal', num: '05', label: 'Goal (Tujuan)' },
-                  { id: 'MedicationStatement', num: '06', label: 'MedicationStatement' },
-                  { id: 'FamilyMemberHistory', num: '07', label: 'FamilyMemberHistory' },
-                  { id: 'MedicationRequest', num: '08', label: 'MedicationRequest' },
-                  { id: 'Composition', num: '09', label: 'Composition' },
-                  { id: 'Medication', num: '10', label: 'Medication' },
-                ].map((tab) => {
+                {FHIR_RESOURCES.filter(tab => activeItemHitList.length === 0 || activeItemHitList.includes(tab.id)).map((tab, idx) => {
                   const isActive = activeTabResource === tab.id;
+                  const numStr = (idx + 1).toString().padStart(2, '0');
                   return (
                     <button
                       key={tab.id}
@@ -412,7 +453,7 @@ export default function MonitoringEncounterPage() {
                       }`}
                     >
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono ${isActive ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                        {tab.num}
+                        {numStr}
                       </span>
                       {tab.label}
                     </button>

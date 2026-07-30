@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Stethoscope, User, FileText, Activity, Syringe, Pill, 
-  ClipboardList, ShieldCheck, FileDown, CheckCircle2,
-  Clock, AlertTriangle, Users, Search, Loader2, RefreshCw, TestTubes,
-  ChevronDown, ChevronRight, Printer
+  ClipboardList, CheckCircle2, Clock, Users, Search, Loader2, RefreshCw, TestTubes, Printer,
+  FileDown, AlertTriangle
 } from 'lucide-react';
-import { icd10Service } from '@/services/icd10.service';
 import { icd9Service } from '@/services/icd9.service';
+import { laboratoriumService } from '@/services/laboratorium.service';
 import { useRawatJalanStore } from '@/store/rawatJalan.store';
 import { SOAPPayload } from '@/types/rawatJalan.types';
+import { AVAILABLE_LAB_TESTS, fillDokterDummyDataHelper } from './rawatJalan.constants';
 import Swal from 'sweetalert2';
 import QueueSidebar from './components/QueueSidebar';
 import PatientHeader from './components/PatientHeader';
@@ -24,10 +24,11 @@ import TabResep from './components/TabResep';
 import TabRujukan from './components/TabRujukan';
 import ScreeningModal from './components/ScreeningModal';
 import RiwayatRMEModal from './components/RiwayatRMEModal';
+import LabResultModal from './components/LabResultModal';
+import DoctorActionBar from './components/DoctorActionBar';
 import DischargePlanning from './components/DischargePlanning';
 import { useReactToPrint } from 'react-to-print';
 import { CetakHasilLab } from '@/components/laboratorium/CetakHasilLab';
-import { laboratoriumService } from '@/services/laboratorium.service';
 
 export default function DokterRawatJalanPage() {
   const [activeTab, setActiveTab] = useState('SOAP_S');
@@ -145,23 +146,7 @@ export default function DokterRawatJalanPage() {
     }
   };
 
-  const availableLabTests = [
-    { category: 'HEMATOLOGI', defaultOpen: true, tests: ['Hematologi Rutin/CBC', 'Hematologi Lengkap (CBC, LED, Hitung Jenis)', 'Hemoglobin', 'LED', 'Eritrosit', 'Leukosit', 'Trombosit', 'Hematokrit', 'Golongan Darah A,B,O & Rh', 'Gambaran Darah Tepi'] },
-    { category: 'URINALISA & FAECES', defaultOpen: true, tests: ['Urine Rutin', 'Protein Total (Urine 24 jam)', 'Faeces Rutin', 'Darah Samar (FIT)'] },
-    { category: 'KIMIA DARAH DASAR', defaultOpen: true, tests: ['Glukosa Puasa', 'Glukosa 2 Jam PP', 'Glukosa Sewaktu', 'Ureum', 'Kreatinin', 'Cholesterol Total', 'Trigliserida', 'SGOT', 'SGPT'] },
-    { category: 'ANEMIA', defaultOpen: false, tests: ['Hematologi Rutin + Retikulosit', 'Retikulosit', 'Besi', 'UIBC Direk', 'TIBC', 'Ferritin', 'Transferrin'] },
-    { category: 'FAAL HEMOSTASIS', defaultOpen: false, tests: ['Waktu Perdarahan', 'Waktu Pembekuan', 'Waktu Protrombin', 'Waktu Trombin', 'APTT', 'Fibrinogen', 'D-Dimer', 'AT III'] },
-    { category: 'FAAL HATI (Lanjutan)', defaultOpen: false, tests: ['Gamma GT', 'Fosfatase Alkali', 'CHE', 'Bilirubin Total', 'Bilirubin Direk', 'Protein Total', 'Albumin', 'Globulin'] },
-    { category: 'DIABETES (Lanjutan)', defaultOpen: false, tests: ['TTGO', 'HbA1c', 'Insulin'] },
-    { category: 'LEMAK (Lanjutan)', defaultOpen: false, tests: ['Cholesterol LDL Direk', 'Cholesterol HDL', 'Apo A1', 'Apo B'] },
-    { category: 'JANTUNG', defaultOpen: false, tests: ['CK', 'CK-MB', 'Troponin I', 'hs-Troponin I Kuantitatif', 'LDH', 'NT-Pro BNP'] },
-    { category: 'GINJAL - HIPERTENSI (Lanjutan)', defaultOpen: false, tests: ['Asam Urat', 'Cystatin-C', 'Albumin Urine Kuantitatif', 'Rasio Albumin-Kreatinin', 'Renin (PRA)', 'Aldosteron'] },
-    { category: 'ELEKTROLIT - GAS DARAH', defaultOpen: false, tests: ['Na, K, Cl', 'Kalsium', 'Fosfor Anorganik', 'Magnesium', 'Analisis Gas Darah'] },
-    { category: 'INFEKSI & HEPATITIS', defaultOpen: false, tests: ['HBsAg', 'Anti-HBs', 'Anti-HCV', 'Anti-HAV IgM', 'Widal', 'Dengue NS1 Antigen', 'Anti-Dengue IgG & IgM', 'Malaria (Mikroskopik)', 'Anti-HIV', 'VDRL/RPR'] },
-    { category: 'TIROID', defaultOpen: false, tests: ['FT3', 'FT4', 'TSHs', 'T3 (Total)', 'T4 (Total)'] },
-    { category: 'TUMOR MARKER', defaultOpen: false, tests: ['AFP', 'CEA', 'PSA', 'CA 125', 'CA 15-3', 'CA 19-9'] },
-    { category: 'IMUNOLOGI', defaultOpen: false, tests: ['ASTO', 'RF', 'CRP Kualitatif', 'hs-CRP', 'ANA (IF)', 'Anti-dsDNA'] }
-  ];
+  const availableLabTests = AVAILABLE_LAB_TESTS;
 
   const [openLabCategories, setOpenLabCategories] = useState<string[]>(
     availableLabTests.filter(c => c.defaultOpen).map(c => c.category)
@@ -196,10 +181,12 @@ export default function DokterRawatJalanPage() {
         keadaanUmum: rekamMedis?.keadaanUmum || 'Tampak Sakit Ringan',
         kesadaran: rekamMedis?.kesadaran || screeningData?.dataTambahan?.triage?.kesadaran || 'Compos Mentis (Sadar Penuh)',
         pemeriksaanFisik: rekamMedis?.pemeriksaanFisik || prev.pemeriksaanFisik || '',
-        hasilPenunjang: rekamMedis?.hasilPenunjang || prev.hasilPenunjang || '',
         diagnosisKlinis: rekamMedis?.diagnosisKlinis || prev.diagnosisKlinis || '',
         rencanaTerapi: rekamMedis?.rencanaTerapi || prev.rencanaTerapi || '',
         instruksiMedis: rekamMedis?.instruksiMedis || prev.instruksiMedis || '',
+        odontogram: rekamMedis?.odontogram || prev.odontogram || {},
+        dmft: rekamMedis?.dmft || prev.dmft || undefined,
+        oralFindings: rekamMedis?.oralFindings || prev.oralFindings || {},
       }));
     }
   }, [rekamMedis, screeningData, alergiList]);
@@ -255,46 +242,7 @@ export default function DokterRawatJalanPage() {
     }
   }, [activeTab]);
 
-  const fillDokterDummyData = () => {
-    setSoapData({
-      keluhanUtama: 'Pasien mengeluh demam tinggi sejak 3 hari yang lalu, disertai pusing, mual, dan badan terasa lemas.',
-      riwayatPenyakitSekarang: 'Demam meningkat di sore dan malam hari. Pasien mengaku nafsu makan menurun dan sempat muntah 1x tadi pagi.',
-      riwayatPenyakitDahulu: 'Riwayat Maag / Gastritis 1 tahun lalu. Tidak ada riwayat hipertensi atau diabetes.',
-      riwayatAlergi: 'Tidak ada alergi obat maupun makanan.',
-      keadaanUmum: 'Tampak Sakit Sedang',
-      kesadaran: 'Compos Mentis (Sadar Penuh)',
-      pemeriksaanFisik: 'Kepala: Normocephal, Mata: Anemis (-/-), Ikterik (-/-). Leher: Pembesaran KGB (-). Thorax: Vesikuler (+/+), Rhonchi (-/-), Wheezing (-/-). Abdomen: Supel, Nyeri tekan epigastrium (+), Bising usus normal. Ekstremitas: Akral hangat, CRT < 2d.',
-      hasilPenunjang: 'Laboratorium: Hb 13.5 g/dL, Leukosit 8.400 /uL, Trombosit 210.000 /uL, Widal Typhi O 1/160.',
-      diagnosisKlinis: 'Febris ec Susp. Fever / Demam Dengue + Gastritis Akut',
-      rencanaTerapi: '1. Istirahat cukup (Bed rest)\n2. Minum air putih 2-3 Liter/hari\n3. Paracetamol 500mg 3x1 tablet bila demam\n4. Antasida Doen 3x1 tablet sebelum makan\n5. Evaluasi darah rutin ulang bila demam > 3 hari',
-      instruksiMedis: 'Edukasi tanda bahaya perdarahan (mimisan, gusi berdarah). Segera ke UGD jika lemas berat atau muntah terus menerus.',
-      tujuanPerawatan: 'Pemulihan kondisi suhu tubuh normal dan eliminasi keluhan mual/nyeri ulu hati pasien',
-      prognosisKode: '170968001',
-      prognosisDisplay: 'Sanam / Baik (Bonam)',
-      diagnosisArr: [
-        {
-          icd10Id: 'A90',
-          kode_icd10: 'A90',
-          nama_diagnosis: 'Dengue fever [classical dengue]',
-          jenisDiagnosis: 'UTAMA'
-        },
-        {
-          icd10Id: 'K29.7',
-          kode_icd10: 'K29.7',
-          nama_diagnosis: 'Gastritis, unspecified',
-          jenisDiagnosis: 'SEKUNDER'
-        }
-      ]
-    });
-
-    Swal.fire({
-      icon: 'success',
-      title: 'Data Dummy Dokter Terisi 100%!',
-      text: 'Semua field SOAP (Subjektif, Objektif, Asesmen, Plan/Rencana), Diagnosa ICD-10, & Tujuan Perawatan terisi otomatis.',
-      timer: 2000,
-      showConfirmButton: false,
-    });
-  };
+  const fillDokterDummyData = () => fillDokterDummyDataHelper(setSoapData);
 
   // ─── Handlers ───
   const handlePilihPasien = (kunjungan: any) => {
@@ -576,12 +524,18 @@ export default function DokterRawatJalanPage() {
                     
                     {/* TAB S: Subjektif */}
                     {activeTab === 'SOAP_S' && (
-                      <TabSubjektif soapData={soapData} setSoapData={setSoapData} setActiveTab={setActiveTab} />
+                      <TabSubjektif soapData={soapData} setSoapData={setSoapData} setActiveTab={setActiveTab} screeningData={screeningData} />
                     )}
 
                     {/* TAB O: Objektif */}
                     {activeTab === 'SOAP_O' && (
-                      <TabObjektif soapData={soapData} setSoapData={setSoapData} setActiveTab={setActiveTab} openLabModal={openLabModal} />
+                      <TabObjektif 
+                        soapData={soapData} 
+                        setSoapData={setSoapData} 
+                        setActiveTab={setActiveTab} 
+                        openLabModal={openLabModal} 
+                        isPoliGigi={Boolean(selectedKunjungan?.poliklinik?.namaPoli?.toLowerCase().includes('gigi'))}
+                      />
                     )}
 
                     {/* TAB A: Asesmen */}
@@ -648,26 +602,15 @@ export default function DokterRawatJalanPage() {
                 </div>
               </fieldset>
 
-                {/* Bottom Footer Actions */}
-                <div className="bg-white p-4 border-t border-gray-200 flex justify-between shadow-lg z-20 relative">
-                  <div className="flex gap-2">
-                    <button onClick={fillDokterDummyData} type="button" className="px-5 py-2.5 bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors text-sm rounded-none shadow-sm flex items-center">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Isi Dummy Otomatis
-                    </button>
-                    <button onClick={handleTundaPemeriksaan} disabled={isSaving} className="px-6 py-2.5 bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70 flex items-center">
-                      <Clock className="w-4 h-4 mr-2" />
-                      Tunda Pemeriksaan
-                    </button>
-                    <button onClick={handleSaveSOAP} disabled={isSaving || selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'} className="px-6 py-2.5 border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70">
-                      Simpan Draf (SOAP)
-                    </button>
-                  </div>
-                  <button onClick={handleSelesaikan} disabled={isSaving || selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'} className="px-8 py-2.5 bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors text-sm rounded-none shadow-sm disabled:opacity-70 flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Selesaikan Pemeriksaan
-                  </button>
-                </div>
+                {/* Bottom Footer Actions Component */}
+                <DoctorActionBar 
+                  fillDummyData={fillDokterDummyData}
+                  handleTundaPemeriksaan={handleTundaPemeriksaan}
+                  handleSaveSOAP={handleSaveSOAP}
+                  handleSelesaikan={handleSelesaikan}
+                  isSaving={isSaving}
+                  isMenungguLab={selectedKunjungan.statusKunjungan === 'MENUNGGU_LAB'}
+                />
               </>
             )}
           </>
@@ -693,53 +636,16 @@ export default function DokterRawatJalanPage() {
         noRM={selectedKunjungan?.pasien?.noRM || ''}
       />
 
-      {/* LAB RESULT MODAL */}
-      {isLabModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-none shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh]">
-            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-indigo-50">
-              <h3 className="text-xl font-extrabold text-indigo-900 flex items-center gap-2">
-                <FileText className="w-6 h-6 text-indigo-600" />
-                Kertas Cetak Hasil Laboratorium
-              </h3>
-              <div className="flex items-center gap-3">
-                <button onClick={handlePrint} className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors flex items-center gap-2">
-                  <Printer className="w-4 h-4" /> Cetak (Printer)
-                </button>
-                <button onClick={handleDownloadPdf} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold shadow-sm transition-colors flex items-center gap-2">
-                  <FileDown className="w-4 h-4" /> Download PDF
-                </button>
-                <button onClick={() => setIsLabModalOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 p-6 overflow-y-auto bg-gray-200 flex justify-center">
-              {isLoadingLab ? (
-                <div className="py-20 flex flex-col items-center text-gray-500">
-                  <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                  <p className="font-medium">Memuat data laboratorium...</p>
-                </div>
-              ) : orderLabData ? (
-                <div className="shadow-2xl overflow-hidden bg-white max-w-full" style={{ width: '210mm', minHeight: '297mm' }}>
-                   <CetakHasilLab ref={printRef} data={orderLabData} />
-                </div>
-              ) : (
-                <div className="py-20 flex flex-col items-center text-gray-500">
-                  <AlertTriangle className="w-12 h-12 mb-4 text-orange-400" />
-                  <p className="font-bold text-lg text-gray-700 mb-1">Belum ada hasil laboratorium</p>
-                  <p className="text-sm">Pasien ini belum memiliki order lab atau hasilnya belum diinput oleh pihak Laboratorium.</p>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-              <button onClick={() => setIsLabModalOpen(false)} className="px-6 py-2 bg-gray-800 text-white font-bold rounded-none hover:bg-gray-900 shadow-sm transition-colors">
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* LAB RESULT MODAL COMPONENT */}
+      <LabResultModal
+        isOpen={isLabModalOpen}
+        onClose={() => setIsLabModalOpen(false)}
+        isLoading={isLoadingLab}
+        orderLabData={orderLabData}
+        handlePrint={handlePrint}
+        handleDownloadPdf={handleDownloadPdf}
+        printRef={printRef}
+      />
     </div>
   );
 }

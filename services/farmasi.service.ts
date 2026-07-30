@@ -29,13 +29,18 @@ export interface ResepData {
     namaLengkap: string;
     tanggalLahir: string;
     jenisKelamin: string;
+    noIHS?: string | null;
   };
   dokter: {
     namaLengkap: string;
+    tenagaMedis?: {
+      noIHS?: string | null;
+    } | null;
   };
   kunjungan: {
     noAntrian?: string;
     jenisPelayanan?: string;
+    encounterId?: string | null;
     poliklinik: {
       namaPoli: string;
     };

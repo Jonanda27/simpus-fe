@@ -187,6 +187,17 @@ export interface CreateScreeningPayload {
   prioritasPelayanan?: string;
   tindakLanjut?: string[];
   catatanPetugas?: string;
+
+  // Poli Gigi Fields
+  golonganDarah?: string;
+  rhesus?: string;
+  statusKehamilan?: string;
+  debrisIndex?: number;
+  kalkulusIndex?: number;
+  skorOhis?: number;
+  interpretasiOhis?: string;
+  riwayatAlergiAnestesi?: string;
+  riwayatPengencerDarah?: string;
 }
 
 /** Response standar API */

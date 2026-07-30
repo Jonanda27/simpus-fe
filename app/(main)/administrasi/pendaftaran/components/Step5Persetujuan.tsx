@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { SignaturePad } from '@/components/ui/SignaturePad';
 import { WebcamCapture } from '@/components/ui/WebcamCapture';
 import { RegistrationFormData } from '../schema';
-import { AlertCircle, Camera, Check, CheckCircle2, ChevronRight, Fingerprint, PenTool } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle2, ChevronRight, Fingerprint } from 'lucide-react';
 
 interface Step5Props {
   register: UseFormRegister<RegistrationFormData>;
@@ -96,9 +96,7 @@ export default function Step5Persetujuan({ register, errors, setValue, watch }: 
               </div>
               <div className="text-left">
                 <span className="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Langkah 1</span>
-                <span className="text-sm flex items-center gap-1.5">
-                  <Camera className="w-4 h-4" /> Foto Wajah Pasien
-                </span>
+                <span className="text-sm">Foto Wajah Pasien</span>
               </div>
             </button>
 
@@ -122,9 +120,7 @@ export default function Step5Persetujuan({ register, errors, setValue, watch }: 
               </div>
               <div className="text-left">
                 <span className="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Langkah 2</span>
-                <span className="text-sm flex items-center gap-1.5">
-                  <PenTool className="w-4 h-4" /> Tanda Tangan / Cap Jari
-                </span>
+                <span className="text-sm">Tanda Tangan / Cap Jari</span>
               </div>
             </button>
           </div>
@@ -134,8 +130,8 @@ export default function Step5Persetujuan({ register, errors, setValue, watch }: 
         {innerStep === 1 && (
           <div className="bg-white border border-slate-200 p-6 shadow-xs w-full flex flex-col items-center animate-in fade-in duration-300">
             <div className="text-center mb-6">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center justify-center gap-2">
-                <Camera className="w-5 h-5 text-blue-600" /> Langkah 1: Foto Wajah Pasien
+              <h3 className="text-lg font-bold text-slate-900">
+                Langkah 1: Foto Wajah Pasien
               </h3>
               <p className="text-xs text-slate-500 mt-1">
                 Wajib melampirkan foto wajah pasien secara real-time untuk verifikasi kehadiran RME.
@@ -172,8 +168,8 @@ export default function Step5Persetujuan({ register, errors, setValue, watch }: 
         {innerStep === 2 && (
           <div className="bg-white border border-slate-200 p-6 shadow-xs w-full flex flex-col items-center animate-in fade-in duration-300">
             <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center justify-center gap-2">
-                <PenTool className="w-5 h-5 text-blue-600" /> Langkah 2: Bukti Persetujuan Pasien
+              <h3 className="text-lg font-bold text-slate-900">
+                Langkah 2: Bukti Persetujuan Pasien
               </h3>
               <p className="text-xs text-slate-500 mt-1">
                 Pilih metode bukti persetujuan digital pasien atau wali pasien.

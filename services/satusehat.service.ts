@@ -113,6 +113,18 @@ export const satusehatService = {
     }
   },
 
+  getActiveResourcesByEncounter: async (encounterId: string) => {
+    try {
+      const response = await api.get(`/satusehat/resource-list/${encounterId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw error.response.data;
+      }
+      throw new Error('Gagal mengambil daftar resource aktif dari SATUSEHAT');
+    }
+  },
+
   retrySyncEncounter: async (kunjunganId: string) => {
     try {
       const response = await api.post(`/satusehat/kunjungan/${kunjunganId}/sync`);
@@ -122,6 +134,30 @@ export const satusehatService = {
         throw error.response.data;
       }
       throw new Error('Gagal melakukan sync ulang ke SATUSEHAT');
+    }
+  },
+
+  sendQuestionnaireResponse: async (data: any) => {
+    try {
+      const response = await api.post('/satusehat/questionnaire-response', data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw error.response.data;
+      }
+      throw new Error('Gagal mengirim QuestionnaireResponse ke SATUSEHAT');
+    }
+  },
+
+  sendMedicationDispense: async (data: any) => {
+    try {
+      const response = await api.post('/satusehat/dispense', data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw error.response.data;
+      }
+      throw new Error('Gagal mengirim MedicationDispense ke SATUSEHAT');
     }
   }
 };

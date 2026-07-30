@@ -29,7 +29,18 @@ export const screeningSchema = z.object({
   riwayatRawatInap: z.string().optional(),
   riwayatTransfusi: z.string().optional(),
   riwayatPengobatan: z.string().optional(),
-  
+
+  // SKRINING KHUSUS POLI GIGI (SATUSEHAT & OHIS)
+  golonganDarah: z.string().optional(),
+  rhesus: z.string().optional(),
+  statusKehamilan: z.string().optional(),
+  debrisIndex: optionalNumber,
+  kalkulusIndex: optionalNumber,
+  skorOhis: optionalNumber,
+  interpretasiOhis: z.string().optional(),
+  riwayatAlergiAnestesi: z.string().optional(),
+  riwayatPengencerDarah: z.string().optional(),
+
   // Tanda Vital Lengkap (Wajib)
   tinggiBadan: z.number().min(1, 'Tinggi badan wajib diisi'),
   beratBadan: z.number().min(1, 'Berat badan wajib diisi'),
